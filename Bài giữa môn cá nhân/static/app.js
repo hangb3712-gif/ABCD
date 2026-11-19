@@ -1180,7 +1180,7 @@ function renderCleanStage() {
     'info',
     'Quy trình Human-in-the-Loop: Kết quả làm sạch được hiển thị trực quan để bạn duyệt trước khi phân tích.',
     [
-      `Đã chuẩn hóa ${fmt(rpt.cells_modified_count)} ô dữ liệu (điền khuyết, sửa sai miền logic, kẹp biên ngoại lai IQR, đồng nhất chuỗi & ngày tháng) và loại bỏ ${fmt(rpt.rows_dropped)} bản ghi trùng lặp.`,
+      `Đã chuẩn hóa ${fmt(rpt.cells_modified_count)} ô dữ liệu (điền khuyết, sửa sai miền logic, kẹp biên ngoại lai bất thường, đồng nhất chuỗi & ngày tháng) và loại bỏ ${fmt(rpt.rows_dropped)} bản ghi trùng lặp.`,
       'Bấm vào từng dòng trong bảng "Kết quả từng quy tắc" bên dưới để xem chi tiết giá trị Trước → Sau của từng ô dữ liệu.'
     ]
   );
