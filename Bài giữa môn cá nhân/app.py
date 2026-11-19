@@ -607,11 +607,20 @@ class AgentHTTPRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"error": str(e)}, status=500)
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8050) -> None:
-    # Tự động khởi tạo database khi bật server
+# Tự động khởi tạo database khi import module (dành cho Vercel Serverless)
+try:
     from auth.database import init_database
     init_database()
+except Exception as _db_err:
+    pass
 
+# Vercel Serverless Function Entrypoints
+handler = AgentHTTPRequestHandler
+app = handler
+application = handler
+
+
+def run_server(host: str = "127.0.0.1", port: int = 8050) -> None:
     server = ThreadingHTTPServer((host, port), AgentHTTPRequestHandler)
     print("=" * 72)
     print("🚀 DATAMIND AI AGENT - HỆ THỐNG PHÂN TÍCH & LÀM SẠCH DỮ LIỆU TỰ HÀNH")

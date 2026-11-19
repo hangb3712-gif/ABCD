@@ -7,8 +7,19 @@ import os
 import sqlite3
 from typing import Optional
 
-DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-DB_PATH = os.path.join(DB_DIR, "datamind_auth.db")
+if os.environ.get("VERCEL"):
+    DB_DIR = "/tmp"
+    DB_PATH = "/tmp/datamind_auth.db"
+    _repo_db = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "datamind_auth.db")
+    if os.path.exists(_repo_db) and not os.path.exists(DB_PATH):
+        import shutil
+        try:
+            shutil.copyfile(_repo_db, DB_PATH)
+        except Exception:
+            pass
+else:
+    DB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+    DB_PATH = os.path.join(DB_DIR, "datamind_auth.db")
 
 
 def get_db_connection() -> sqlite3.Connection:
