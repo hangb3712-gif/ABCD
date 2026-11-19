@@ -24,17 +24,23 @@ else:
 
 def get_db_connection() -> sqlite3.Connection:
     """Tạo kết nối tới SQLite database với row_factory dạng dict-like."""
-    os.makedirs(DB_DIR, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, timeout=10.0)
+    try:
+        os.makedirs(DB_DIR, exist_ok=True)
+        conn = sqlite3.connect(DB_PATH, timeout=10.0)
+    except Exception:
+        conn = sqlite3.connect(":memory:", timeout=10.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
+    try:
+        conn.execute("PRAGMA foreign_keys = ON;")
+    except Exception:
+        pass
     return conn
 
 
 def init_database() -> None:
     """Khởi tạo bảng cơ sở dữ liệu nếu chưa tồn tại."""
-    conn = get_db_connection()
     try:
+        conn = get_db_connection()
         with conn:
             # Bảng tài khoản người dùng
             conn.execute("""
@@ -90,5 +96,10 @@ def init_database() -> None:
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_expires ON user_sessions(expires_at);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_attempts_ip ON login_attempts(ip_address, attempt_time);")
+    except Exception as e:
+        print(f"Warning init_database: {e}")
     finally:
-        conn.close()
+        try:
+            conn.close()
+        except Exception:
+            pass

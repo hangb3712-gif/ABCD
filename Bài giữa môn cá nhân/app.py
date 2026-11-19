@@ -204,7 +204,7 @@ def create_session_from_df(df: pd.DataFrame, dataset_name: str, user_id: Optiona
     }
 
 
-class AgentHTTPRequestHandler(BaseHTTPRequestHandler):
+class handler(BaseHTTPRequestHandler):
     """Bộ xử lý HTTP phục vụ Giao diện Web, REST API Phân tích AI và Xác thực Người dùng."""
 
     def log_message(self, format: str, *args: Any) -> None:
@@ -274,7 +274,10 @@ class AgentHTTPRequestHandler(BaseHTTPRequestHandler):
         if length == 0:
             return {}
         raw = self.rfile.read(length)
-        return json.loads(raw.decode("utf-8"))
+        try:
+            return json.loads(raw.decode("utf-8"))
+        except Exception:
+            return {}
 
     def do_OPTIONS(self) -> None:
         self.send_response(200)
@@ -284,104 +287,115 @@ class AgentHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
-        parsed = urllib.parse.urlparse(self.path)
-        path = parsed.path
-        query = urllib.parse.parse_qs(parsed.query)
+        try:
+            parsed = urllib.parse.urlparse(self.path)
+            path = parsed.path
+            query = urllib.parse.parse_qs(parsed.query)
 
-        # 1. API Xác thực: Lấy thông tin tài khoản hiện tại
-        if path == "/api/auth/me":
-            user = self._get_current_user()
-            if user:
-                self._send_json({"ok": True, "authenticated": True, "user": user})
+            # 1. API Xác thực: Lấy thông tin tài khoản hiện tại
+            if path == "/api/auth/me":
+                user = self._get_current_user()
+                if user:
+                    self._send_json({"ok": True, "authenticated": True, "user": user})
+                else:
+                    self._send_json({"ok": True, "authenticated": False, "user": None})
+                return
+
+            # 2. API lấy danh sách bộ dữ liệu mẫu
+            if path == "/api/samples":
+                self._send_json({"samples": SAMPLE_DATASETS})
+                return
+
+            # 3. API tải xuống dữ liệu sạch (CSV UTF-8 with BOM cho Excel)
+            if path == "/api/download-csv":
+                session_id = query.get("session_id", [""])[0]
+                sess = SESSIONS.get(session_id)
+                if not sess or sess.get("cleaned_df") is None:
+                    self._send_json({"error": "Không tìm thấy phiên dữ liệu."}, status=404)
+                    return
+
+                # Kiểm tra quyền sở hữu phiên phân tích
+                current_user = self._get_current_user()
+                if sess.get("user_id") and (not current_user or current_user["id"] != sess["user_id"]):
+                    self._send_json({"error": "Bạn không có quyền truy cập phiên dữ liệu của tài khoản khác."}, status=403)
+                    return
+
+                csv_str = sess["cleaned_df"].to_csv(index=False)
+                csv_bytes = ("\ufeff" + csv_str).encode("utf-8")
+                clean_name = f"cleaned_{sess['dataset_name'].rsplit('.', 1)[0]}.csv"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/csv; charset=utf-8")
+                self.send_header("Content-Disposition", f'attachment; filename="{clean_name}"')
+                self.send_header("Content-Length", str(len(csv_bytes)))
+                self.end_headers()
+                self.wfile.write(csv_bytes)
+                return
+
+            # 4. API tải xuống Báo cáo HTML độc lập
+            if path == "/api/download-html":
+                session_id = query.get("session_id", [""])[0]
+                sess = SESSIONS.get(session_id)
+                if not sess or not sess.get("html_report"):
+                    self._send_json({"error": "Báo cáo HTML chưa được khởi tạo."}, status=404)
+                    return
+
+                current_user = self._get_current_user()
+                if sess.get("user_id") and (not current_user or current_user["id"] != sess["user_id"]):
+                    self._send_json({"error": "Bạn không có quyền truy cập báo cáo của tài khoản khác."}, status=403)
+                    return
+
+                html_bytes = sess["html_report"].encode("utf-8")
+                rpt_name = f"Bao_Cao_Phan_Tich_{sess['dataset_name'].rsplit('.', 1)[0]}.html"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Disposition", f'attachment; filename="{rpt_name}"')
+                self.send_header("Content-Length", str(len(html_bytes)))
+                self.end_headers()
+                self.wfile.write(html_bytes)
+                return
+
+            # 5. Phục vụ các file giao diện Web tĩnh (index.html, styles.css, app.js)
+            if path == "/" or path == "/index.html":
+                file_path = os.path.join(STATIC_DIR, "index.html")
+                if not os.path.isfile(file_path):
+                    file_path = os.path.join(BASE_DIR, "index.html")
+            elif path.startswith("/static/"):
+                rel = path.removeprefix("/static/").lstrip("/\\")
+                file_path = os.path.join(STATIC_DIR, rel)
+                if not os.path.isfile(file_path):
+                    file_path = os.path.join(BASE_DIR, "static", rel)
             else:
-                self._send_json({"ok": True, "authenticated": False, "user": None})
-            return
+                file_path = os.path.join(STATIC_DIR, path.lstrip("/\\"))
+                if not os.path.isfile(file_path):
+                    file_path = os.path.join(BASE_DIR, path.lstrip("/\\"))
 
-        # 2. API lấy danh sách bộ dữ liệu mẫu
-        if path == "/api/samples":
-            self._send_json({"samples": SAMPLE_DATASETS})
-            return
-
-        # 3. API tải xuống dữ liệu sạch (CSV UTF-8 with BOM cho Excel)
-        if path == "/api/download-csv":
-            session_id = query.get("session_id", [""])[0]
-            sess = SESSIONS.get(session_id)
-            if not sess or sess.get("cleaned_df") is None:
-                self._send_json({"error": "Không tìm thấy phiên dữ liệu."}, status=404)
-                return
-
-            # Kiểm tra quyền sở hữu phiên phân tích
-            current_user = self._get_current_user()
-            if sess.get("user_id") and (not current_user or current_user["id"] != sess["user_id"]):
-                self._send_json({"error": "Bạn không có quyền truy cập phiên dữ liệu của tài khoản khác."}, status=403)
-                return
-
-            csv_str = sess["cleaned_df"].to_csv(index=False)
-            csv_bytes = ("\ufeff" + csv_str).encode("utf-8")
-            clean_name = f"cleaned_{sess['dataset_name'].rsplit('.', 1)[0]}.csv"
-            self.send_response(200)
-            self.send_header("Content-Type", "text/csv; charset=utf-8")
-            self.send_header("Content-Disposition", f'attachment; filename="{clean_name}"')
-            self.send_header("Content-Length", str(len(csv_bytes)))
-            self.end_headers()
-            self.wfile.write(csv_bytes)
-            return
-
-        # 4. API tải xuống Báo cáo HTML độc lập
-        if path == "/api/download-html":
-            session_id = query.get("session_id", [""])[0]
-            sess = SESSIONS.get(session_id)
-            if not sess or not sess.get("html_report"):
-                self._send_json({"error": "Báo cáo HTML chưa được khởi tạo."}, status=404)
-                return
-
-            current_user = self._get_current_user()
-            if sess.get("user_id") and (not current_user or current_user["id"] != sess["user_id"]):
-                self._send_json({"error": "Bạn không có quyền truy cập báo cáo của tài khoản khác."}, status=403)
-                return
-
-            html_bytes = sess["html_report"].encode("utf-8")
-            rpt_name = f"Bao_Cao_Phan_Tich_{sess['dataset_name'].rsplit('.', 1)[0]}.html"
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Disposition", f'attachment; filename="{rpt_name}"')
-            self.send_header("Content-Length", str(len(html_bytes)))
-            self.end_headers()
-            self.wfile.write(html_bytes)
-            return
-
-        # 5. Phục vụ các file giao diện Web tĩnh (index.html, styles.css, app.js)
-        if path == "/" or path == "/index.html":
-            file_path = os.path.join(STATIC_DIR, "index.html")
-        elif path.startswith("/static/"):
-            rel = path.removeprefix("/static/").lstrip("/\\")
-            file_path = os.path.join(STATIC_DIR, rel)
-        else:
-            file_path = os.path.join(STATIC_DIR, path.lstrip("/\\"))
-
-        if os.path.isfile(file_path):
-            ext = os.path.splitext(file_path)[1].lower()
-            content_types = {
-                ".html": "text/html; charset=utf-8",
-                ".css": "text/css; charset=utf-8",
-                ".js": "application/javascript; charset=utf-8",
-                ".json": "application/json; charset=utf-8",
-                ".svg": "image/svg+xml",
-                ".png": "image/png",
-                ".jpg": "image/jpeg",
-                ".jpeg": "image/jpeg",
-                ".ico": "image/x-icon"
-            }
-            ctype = content_types.get(ext, "application/octet-stream")
-            with open(file_path, "rb") as f:
-                content = f.read()
-            self.send_response(200)
-            self.send_header("Content-Type", ctype)
-            self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-        else:
-            self._send_json({"error": "Not Found"}, status=404)
+            if os.path.isfile(file_path):
+                ext = os.path.splitext(file_path)[1].lower()
+                content_types = {
+                    ".html": "text/html; charset=utf-8",
+                    ".css": "text/css; charset=utf-8",
+                    ".js": "application/javascript; charset=utf-8",
+                    ".json": "application/json; charset=utf-8",
+                    ".svg": "image/svg+xml",
+                    ".png": "image/png",
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".ico": "image/x-icon"
+                }
+                ctype = content_types.get(ext, "application/octet-stream")
+                with open(file_path, "rb") as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+            else:
+                self._send_json({"error": f"Not Found: {path}"}, status=404)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self._send_json({"error": f"Lỗi xử lý yêu cầu: {str(e)}"}, status=500)
 
     def do_POST(self) -> None:
         parsed = urllib.parse.urlparse(self.path)
@@ -615,7 +629,7 @@ except Exception as _db_err:
     pass
 
 # Vercel Serverless Function Entrypoints
-handler = AgentHTTPRequestHandler
+AgentHTTPRequestHandler = handler
 app = handler
 application = handler
 
