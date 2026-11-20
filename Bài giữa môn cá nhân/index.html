@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600;1,700;1,800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/styles.css?v=4.0">
+<link rel="stylesheet" href="/static/styles.css?v=4.6">
 </head>
 <body>
 
@@ -257,16 +257,16 @@
 
     <div class="actions" id="p1Actions" style="display:none">
       <button class="btn btn-outline" onclick="resetAll()">← Chọn file khác</button>
-      <div class="right"><button class="btn btn-primary" id="btnToClean" onclick="goClean()">Tiếp tục: Làm sạch dữ liệu →</button></div>
+      <div class="right"><button class="btn btn-primary" id="btnToClean" onclick="goClean()">Tiếp tục: Xử lý &amp; Làm sạch dữ liệu →</button></div>
     </div>
   </section>
 
-  <!-- ═══ CHẶNG 2: LÀM SẠCH DỮ LIỆU & KIỂM DUYỆT ═══ -->
+  <!-- ═══ CHẶNG 2: XỬ LÝ & LÀM SẠCH DỮ LIỆU ═══ -->
   <section class="panel" id="p2">
     <div class="panel-head"><div>
       <span class="chip">CHẶNG 2 / 5</span>
-      <h2>Làm sạch dữ liệu &amp; Kiểm duyệt trực quan</h2>
-      <p>Bật hoặc tắt các quy tắc, chọn lại phương pháp xử lý rồi bấm <b>Làm sạch lại</b> để xem kết quả đối chiếu. Khi thấy dữ liệu đã đúng ý, bấm <b>Dữ liệu đã ổn, sang Xử lý</b>.</p>
+      <h2>Xử lý &amp; Làm sạch dữ liệu</h2>
+      <p>Chỉ tập trung xử lý và làm sạch dữ liệu: tự động khử trùng lặp, chuẩn hóa định dạng số/ngày, điền ô trống (imputation) và xử lý ngoại lai cực đoan. Bạn có quyền bật/tắt quy tắc hoặc nhập yêu cầu riêng để sửa dữ liệu.</p>
     </div></div>
 
     <div class="kpi-grid" id="cleanKpi"></div>
@@ -328,16 +328,16 @@
 
     <div class="actions">
       <button class="btn btn-outline" onclick="back(1)">← Quay lại: chọn file khác</button>
-      <div class="right"><button class="btn btn-primary" id="btnAcceptClean" onclick="acceptClean()">Dữ liệu đã ổn, sang Xử lý →</button></div>
+      <div class="right"><button class="btn btn-primary" id="btnAcceptClean" onclick="acceptClean()">Tiếp tục: Phân tích dữ liệu →</button></div>
     </div>
   </section>
 
-  <!-- ═══ CHẶNG 3: XỬ LÝ DỮ LIỆU & SUY LUẬN AI ═══ -->
+  <!-- ═══ CHẶNG 3: PHÂN TÍCH DỮ LIỆU ═══ -->
   <section class="panel" id="p3">
     <div class="panel-head"><div>
       <span class="chip">CHẶNG 3 / 5</span>
-      <h2>Xử lý &amp; Phân tích dữ liệu bằng AI Agent</h2>
-      <p>Hệ thống chạy 4 bước suy luận và tính toán trên dữ liệu đã làm sạch. Kết quả chỉ được xuất ra báo cáo sau khi bạn xác nhận ở chặng 4.</p>
+      <h2>Phân tích dữ liệu</h2>
+      <p>Hệ thống tự động thực thi 4 bước phân tích đa chiều trên dữ liệu đã làm sạch: thống kê mô tả, gom nhóm phân khúc, tính toán chỉ số kinh doanh và ma trận tương quan. Kết quả sẽ được đưa sang Chặng 4 để bạn xác nhận trước khi xuất báo cáo.</p>
     </div></div>
     <div id="procAlert"></div>
     <div class="card">
@@ -346,7 +346,7 @@
     <div class="actions">
       <button class="btn btn-outline" id="btnProcBack" onclick="back(2)">← Quay lại: làm sạch</button>
       <div class="right">
-        <button class="btn btn-primary" id="btnProcess" onclick="runProcess()">▶ Bắt đầu xử lý</button>
+        <button class="btn btn-primary" id="btnProcess" onclick="runProcess()">▶ Bắt đầu phân tích</button>
         <button class="btn btn-primary" id="btnToConfirm" style="display:none" onclick="showStage(4)">Sang bước xác nhận →</button>
       </div>
     </div>
@@ -357,7 +357,7 @@
     <div class="panel-head"><div>
       <span class="chip">CHẶNG 4 / 5</span>
       <h2>Xác nhận kết quả phân tích</h2>
-      <p>Kiểm tra số liệu tổng hợp và nhận định của AI Agent trước khi xuất báo cáo HTML trực tiếp. Nếu thấy chưa đúng, bạn có thể quay lại bước làm sạch.</p>
+      <p>Kiểm tra số liệu tổng hợp và nhận định của AI Agent trước khi xuất báo cáo. Nếu thấy chưa đúng, bạn có thể quay lại bước làm sạch.</p>
     </div></div>
     <div id="confirmRecon"></div>
     <div class="kpi-grid" id="confirmKpi"></div>
@@ -370,18 +370,18 @@
     </div>
     <label class="confirm-box">
       <input type="checkbox" id="chkConfirm" onchange="updConfirm()">
-      Tôi đã kiểm tra số liệu làm sạch &amp; phân tích ở trên và đồng ý xuất báo cáo HTML trực tiếp trên giao diện.
+      Tôi đã kiểm tra số liệu làm sạch &amp; phân tích ở trên và đồng ý xuất báo cáo trực tiếp trên giao diện.
     </label>
     <div class="actions">
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-outline" onclick="back(2)">← Làm sạch lại</button>
         <button class="btn btn-outline" onclick="back(1)">← Chọn file khác</button>
       </div>
-      <div class="right"><button class="btn btn-primary" id="btnConfirm" disabled onclick="confirmExport()">✓ Xác nhận &amp; xuất báo cáo HTML</button></div>
+      <div class="right"><button class="btn btn-primary" id="btnConfirm" disabled onclick="confirmExport()">✓ Xác nhận &amp; xuất báo cáo →</button></div>
     </div>
   </section>
 
-  <!-- ═══ CHẶNG 5: BÁO CÁO & DASHBOARD ĐA BIỂU ĐỒ ═══ -->
+  <!-- ═══ CHẶNG 5: BÁO CÁO & DASHBOARD TRỰC QUAN HÓA ═══ -->
   <section class="panel" id="p5">
     <div class="report-head">
       <div>
@@ -403,17 +403,76 @@
     <!-- KHUNG TỔNG HỢP CHỈ SỐ DOANH THU & HIỆU SUẤT TÀI CHÍNH -->
     <div id="revenueExecutiveBanner" style="display:none;margin-bottom:22px"></div>
 
-    <!-- HỆ THỐNG 4 BIỂU ĐỒ TRỰC QUAN HÓA THÂN THIỆN, DỄ NHÌN, DỄ HIỂU -->
-    <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:12px">Hệ Thống Biểu Đồ Trực Quan Hóa Đa Chiều &amp; Doanh Thu</h3>
+    <!-- 1. PHÂN TÍCH NGUYÊN NHÂN GỐC RỄ (ROOT CAUSE ANALYSIS - RCA) -->
+    <div class="card" style="border-left: 5px solid var(--accent-pink); margin-bottom: 22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <h3 style="margin:0; font-size:1.15rem; color:#b52b65;">
+          🔍 1. Phân tích Nguyên nhân Gốc rễ &amp; Điểm nghẽn Quy trình (Root Cause Analysis - RCA)
+        </h3>
+        <span class="chip" style="background:#fde8f0; color:#b52b65; border-color:#ffafcc;">Phân tích 5 Whys &amp; Khắc phục lỗi sai</span>
+      </div>
+      <p class="muted" style="font-size:.85rem; margin-bottom:14px;">
+        Đánh giá toàn diện các nguyên nhân gốc rễ dẫn đến sai lệch dữ liệu, thất thoát cơ hội và đề xuất ứng dụng AI:
+      </p>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:22%;">Vấn đề Nhận diện</th>
+              <th style="width:34%;">Nguyên nhân Gốc rễ (Root Cause)</th>
+              <th style="width:22%;">Mức độ Ảnh hưởng</th>
+              <th style="width:22%;">Giải pháp Ứng dụng AI</th>
+            </tr>
+          </thead>
+          <tbody id="rootCauseTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. NHẬN ĐỊNH & PHÁT HIỆN CHUYÊN SÂU TỪ AI (KEY FINDINGS & INSIGHTS) -->
+    <div class="card" style="border-left: 5px solid var(--sky-blue); margin-bottom: 22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <h3 style="margin:0; font-size:1.15rem; color:#1d4e78;">
+          💡 2. Nhận định &amp; Phát hiện Chuyên sâu (Business Insights)
+        </h3>
+        <span class="chip" style="background:#eaf4ff; color:#1d4e78; border-color:#bde0fe;">Trích xuất tự động từ dữ liệu sạch</span>
+      </div>
+      <div class="findings-list" id="reportFindingsList"></div>
+    </div>
+
+    <!-- 3. ĐỀ XUẤT GIẢI PHÁP CHIẾN LƯỢC TỪ AI (ACTIONABLE SOLUTIONS) -->
+    <div class="card" style="border-left: 5px solid var(--pastel-purple); margin-bottom: 22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+        <h3 style="margin:0; font-size:1.15rem; color:#4a355b;">
+          🚀 3. Đề xuất Giải pháp Hành động (Actionable Solutions &amp; AI Recommendations)
+        </h3>
+        <span class="chip" style="background:#f4ecf8; color:#4a355b; border-color:#cdb4db;">Lộ trình cải tiến hiệu suất</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:130px;">Mức ưu tiên</th>
+              <th>Giải pháp Khuyến nghị</th>
+              <th>Tác động Kỳ vọng</th>
+            </tr>
+          </thead>
+          <tbody id="reportRecsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. HỆ THỐNG 4 BIỂU ĐỒ TRỰC QUAN HÓA QUEN THUỘC (KHÔNG DÙNG BIỂU ĐỒ LẠ) -->
+    <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:12px">Hệ Thống Biểu Đồ Trực Quan Hóa Quen Thuộc &amp; Doanh Thu</h3>
     <div class="multi-charts-grid">
-      <!-- BIỂU ĐỒ 1: SO SÁNH QUY MÔ / HIỆU SUẤT THEO PHÂN KHÚC (BAR) -->
+      <!-- BIỂU ĐỒ 1: SO SÁNH CỘT KÉP (BAR) -->
       <div class="chart-card reveal-on-scroll">
         <div class="chart-card-head">
           <div>
             <h3>1. So sánh Đối chiếu theo Phân khúc (Chưa làm sạch vs Đã làm sạch)</h3>
             <div class="chart-stat-sub" id="chart1Stat"></div>
           </div>
-          <span class="chart-badge">Biểu đồ Cột Kép Đối Chiếu</span>
+          <span class="chart-badge">Biểu đồ Cột Kép</span>
         </div>
         <div class="chart-box-large"><canvas id="marginChart"></canvas></div>
       </div>
@@ -437,35 +496,46 @@
             <h3 id="trendChartTitle">3. Xu hướng Chuỗi Thời gian / Tích lũy</h3>
             <div class="chart-stat-sub" id="chart3Stat"></div>
           </div>
-          <span class="chart-badge">Biểu đồ Vùng (Area)</span>
+          <span class="chart-badge">Biểu đồ Vùng / Đường</span>
         </div>
         <div class="chart-box-large"><canvas id="trendChart"></canvas></div>
       </div>
 
-      <!-- BIỂU ĐỒ 4: ĐÁNH GIÁ ĐA CHIỀU CHẤT LƯỢNG DỮ LIỆU (RADAR CHART) -->
+      <!-- BIỂU ĐỒ 4: XẾP HẠNG TOP PHÂN KHÚC (HORIZONTAL BAR - KHÔNG DÙNG RADAR LẠ) -->
       <div class="chart-card reveal-on-scroll">
         <div class="chart-card-head">
           <div>
-            <h3>4. Đánh giá Chất lượng Dữ liệu (Chưa làm sạch vs Đã làm sạch)</h3>
+            <h3>4. Xếp hạng Top Phân khúc / Đóng góp</h3>
             <div class="chart-stat-sub" id="chart4Stat"></div>
           </div>
-          <span class="chart-badge">Radar Đối Chiếu Đa Chiều</span>
+          <span class="chart-badge">Biểu đồ Cột Ngang</span>
         </div>
-        <div class="chart-box-large"><canvas id="radarHealthChart"></canvas></div>
+        <div class="chart-box-large"><canvas id="horizontalBarChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 5. BẢNG KẾT QUẢ TỔNG HỢP (TỐI ĐA 10 DÒNG + NÚT HIỂN THỊ TOÀN BỘ) -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h3 style="margin:0">Bảng kết quả tổng hợp &amp; Khuyến nghị</h3>
+        <span class="muted" style="font-size:.8rem" id="reportTableBadge">Mặc định hiển thị tối đa 10 dòng đầu</span>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Phân khúc</th><th style="text-align:right">Số bản ghi</th><th style="text-align:right">Tổng chỉ số</th><th style="text-align:right">Trung bình</th><th style="text-align:right">Trung vị</th><th style="text-align:right">Tỷ trọng %</th><th>Khuyến nghị</th></tr></thead>
+        <tbody id="reportTable"></tbody>
+      </table></div>
+      
+      <!-- Nút hiển thị toàn bộ bảng nếu dữ liệu vượt quá 10 dòng -->
+      <div class="table-toggle-btn-wrap" id="reportTableToggleWrap" style="display:none">
+        <button id="btnToggleReportTable" class="btn btn-outline btn-sm" onclick="toggleReportTableExpand()">
+          👁️ Hiển thị toàn bộ bảng ↓
+        </button>
       </div>
     </div>
 
     <!-- THẺ CHI TIẾT TỪNG PHÂN KHÚC -->
     <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:12px">Chi tiết từng phân khúc &amp; Khuyến nghị của AI Agent</h3>
     <div class="program-cards" id="programCards"></div>
-
-    <div class="card">
-      <h3>Bảng kết quả tổng hợp &amp; Khuyến nghị</h3>
-      <div class="tbl-wrap"><table>
-        <thead><tr><th>Phân khúc</th><th style="text-align:right">Số bản ghi</th><th style="text-align:right">Tổng chỉ số</th><th style="text-align:right">Trung bình</th><th style="text-align:right">Trung vị</th><th style="text-align:right">Tỷ trọng %</th><th>Khuyến nghị</th></tr></thead>
-        <tbody id="reportTable"></tbody>
-      </table></div>
-    </div>
 
     <!-- KHUNG BÁO CÁO HTML ĐẦY ĐỦ TRỰC TIẾP TRÊN GIAO DIỆN -->
     <div class="card">
@@ -693,34 +763,34 @@
     <div class="modal-head-fixed">
       <h2>📘 Hướng Dẫn Sử Dụng DataMind AI Agent</h2>
       <p style="color:var(--t2);font-size:0.86rem;margin-top:2px">
-        Quy trình phân tích dữ liệu 5 chặng tuân thủ nguyên tắc <strong>Human-in-the-Loop</strong> — đảm bảo minh bạch và chính xác.
+        Quy trình xử lý &amp; phân tích dữ liệu 5 chặng chuẩn hóa — tuân thủ nguyên tắc <strong>Human-in-the-Loop</strong>, đảm bảo minh bạch và chính xác.
       </p>
     </div>
 
     <div class="info-modal-scrollable">
       <div class="guide-step-card">
-        <h4>Chặng 1: Nhập dữ liệu &amp; Bắt lỗi</h4>
+        <h4>Chặng 1: Nhập dữ liệu &amp; Bắt lỗi cấu trúc</h4>
         <p>Kéo thả tệp CSV hoặc Excel của bạn, hoặc bấm chọn 1 trong 3 tệp mẫu có sẵn. Nếu tệp lỗi, hệ thống sẽ chặn lại và hướng dẫn sửa ngay.</p>
       </div>
 
       <div class="guide-step-card">
-        <h4>Chặng 2: Làm sạch dữ liệu thông minh</h4>
-        <p>AI Agent tự động gợi ý các quy tắc khử trùng lặp, chuẩn hóa ngày tháng, xử lý ngoại lai bất thường. Bạn có quyền bật/tắt từng quy tắc và bấm <b>Làm sạch lại</b> để xem trước dữ liệu.</p>
+        <h4>Chặng 2: Xử lý &amp; Làm sạch dữ liệu</h4>
+        <p>Chỉ tập trung xử lý và làm sạch dữ liệu: tự động khử trùng lặp, chuẩn hóa ngày tháng/số, điền ô trống (imputation) và xử lý ngoại lai cực đoan. Bạn có quyền bật/tắt từng quy tắc hoặc nhập yêu cầu sửa riêng.</p>
       </div>
 
       <div class="guide-step-card">
-        <h4>Chặng 3: Suy luận &amp; Xử lý phân tích</h4>
-        <p>Hệ thống tự động thực thi các thuật toán tính toán thống kê (Mean, Median, Tỷ trọng, Tốc độ tăng trưởng) trên dữ liệu đã chuẩn hóa.</p>
+        <h4>Chặng 3: Phân tích dữ liệu</h4>
+        <p>Hệ thống tự động thực thi các thuật toán thống kê (Tổng, Trung bình, Trung vị, Tỷ trọng, Ma trận tương quan) trên dữ liệu đã làm sạch.</p>
       </div>
 
       <div class="guide-step-card">
-        <h4>Chặng 4: Phê duyệt kết quả (Human-in-the-Loop)</h4>
-        <p>Bảng số liệu tổng hợp được đưa ra để bạn đối soát. Tích chọn ô cam kết phê duyệt rồi nhấn xuất báo cáo HTML.</p>
+        <h4>Chặng 4: Xác nhận kết quả (Human-in-the-Loop)</h4>
+        <p>Bảng số liệu tổng hợp và đối soát được đưa ra để bạn kiểm duyệt. Tích chọn ô xác nhận rồi bấm xuất báo cáo.</p>
       </div>
 
       <div class="guide-step-card">
-        <h4>Chặng 5: Dashboard 4 biểu đồ &amp; Xuất báo cáo</h4>
-        <p>Chiêm ngưỡng 4 biểu đồ trực quan (Cột ngang, Donut, Vùng chuỗi thời gian, Radar chất lượng dữ liệu). Bạn có thể sửa trực tiếp trên báo cáo HTML, tải file HTML độc lập, in PDF hoặc tải dữ liệu sạch CSV.</p>
+        <h4>Chặng 5: Báo cáo &amp; Trực quan hóa</h4>
+        <p>Báo cáo chuyên sâu gồm: Phân tích Nguyên nhân gốc rễ (RCA), Nhận định &amp; Insights từ AI, Đề xuất giải pháp hành động, Hệ thống 4 biểu đồ trực quan quen thuộc (Cột kép, Donut, Vùng/Đường, Cột ngang) và Bảng dữ liệu giới hạn 10 dòng có nút mở rộng toàn bộ.</p>
       </div>
 
       <div style="text-align:right;margin-top:16px">
@@ -731,6 +801,6 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="/static/app.js?v=4.0"></script>
+<script src="/static/app.js?v=4.6"></script>
 </body>
 </html>

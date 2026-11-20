@@ -2621,3 +2621,52 @@ details.tpl summary {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   BÁO CÁO 4 CHẶNG: NGUYÊN NHÂN GỐC RỄ, INSIGHT, GIẢI PHÁP & NÚT MỞ RỘNG BẢNG
+   ═══════════════════════════════════════════════════════════════════════════ */
+.prio-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.prio-high {
+  background: #fde8f0;
+  color: #b52b65;
+  border: 1px solid #ffafcc;
+}
+
+.prio-med {
+  background: #eaf4ff;
+  color: #1d4e78;
+  border: 1px solid #bde0fe;
+}
+
+.finding-card {
+  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  transition: transform var(--tr-fast), box-shadow var(--tr-fast);
+}
+
+.finding-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.table-toggle-btn-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-soft);
+}
+
+

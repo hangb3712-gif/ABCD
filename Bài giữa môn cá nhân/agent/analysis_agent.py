@@ -463,7 +463,7 @@ Ngữ cảnh dữ liệu:
                 "title": f"Phân phối thống kê của '{ns0['column']}' ({stability})",
                 "detail": (
                     f"Biến '{ns0['column']}' có giá trị trung bình đạt {ns0['mean']:,.2f} (độ lệch chuẩn SD = {ns0['std']:,.2f}), "
-                    f"trung vị (Median) đạt {ns0['median']:,.2f} trong khoảng tứ phân vị IQR [{ns0['q25']:,.2f} – {ns0['q75']:,.2f}], "
+                    f"trung vị (Median) đạt {ns0['median']:,.2f} trong khoảng phân vị chuẩn [{ns0['q25']:,.2f} – {ns0['q75']:,.2f}], "
                     f"biên độ dao động từ {ns0['min']:,.2f} đến {ns0['max']:,.2f}."
                 )
             })
@@ -473,7 +473,7 @@ Ngữ cảnh dữ liệu:
             "title": "Hiệu quả từ quy trình Làm sạch có Kiểm duyệt (Human-in-the-Loop Data Hygiene)",
             "detail": (
                 f"Trước khi phân tích, AI Agent đã phát hiện và xử lý {rows_dropped} dòng trùng lặp/vi phạm và {cells_mod} ô dữ liệu lỗi "
-                f"(bao gồm giá trị thiếu, lệch chuẩn định dạng chuỗi/ngày và ngoại lai IQR), giúp ngăn chặn sai số lan truyền vào báo cáo."
+                f"(bao gồm giá trị thiếu, lệch chuẩn định dạng chuỗi/ngày và ngoại lai cực đoan), giúp ngăn chặn sai số lan truyền vào báo cáo."
             )
         })
         recommendations.append({
@@ -489,8 +489,37 @@ Ngữ cảnh dữ liệu:
                 "impact": "Tập trung theo dõi bảng phân rã chi tiết và biểu đồ tương tác trực tiếp trong báo cáo HTML bên dưới."
             })
 
+        # 4. Phân tích Nguyên nhân Gốc rễ (Root Cause Analysis - RCA)
+        root_causes = [
+            {
+                "issue": "Bỏ sót thông tin & Sai lệch định dạng dữ liệu đầu vào",
+                "root_cause": "Khâu thu thập dữ liệu từ email và biểu mẫu thủ công thiếu cơ chế kiểm soát hợp lệ tức thời (Input Validation Gate). Nhân viên kinh doanh ghi nhận dữ liệu không theo chuẩn thống nhất.",
+                "impact": f"Gây ra {cells_mod} ô dữ liệu bị khuyết thiếu, sai định dạng chuỗi/ngày, làm chậm thời gian xử lý và giảm độ tin cậy của đề xuất bán hàng.",
+                "solution": "Ứng dụng AI Agent tự động trích xuất thông tin từ văn bản tự do, tự động điền khuyết và chuẩn hóa định dạng ngay khi tiếp nhận yêu cầu."
+            },
+            {
+                "issue": "Trùng lặp cơ hội bán hàng & Dữ liệu bị phân mảnh",
+                "root_cause": "Các yêu cầu gửi qua nhiều kênh (email, web form) thiếu mã định danh duy nhất (Unique Lead ID) và cơ chế đối soát liên phòng ban, dẫn đến việc nhiều nhân viên cùng xử lý một khách hàng.",
+                "impact": f"Tạo ra {rows_dropped} bản ghi trùng lặp, gây lãng phí nguồn lực tiếp cận, xung đột nội bộ và làm sai lệch thống kê tổng quy mô doanh số.",
+                "solution": "AI Agent tự động khử trùng lặp đa trường (Tên khách hàng, Email, Số điện thoại) và hợp nhất hồ sơ cơ hội bán hàng trước khi phân bổ."
+            },
+            {
+                "issue": "Báo giá cũ & Hứa hẹn tiến độ giao hàng không khả thi",
+                "root_cause": "Nhân viên kinh doanh tra cứu bảng giá và tồn kho thủ công, thiếu kết nối thời gian thực với bộ phận Vận hành và Kho, dẫn đến sử dụng giá cũ hoặc cam kết thời hạn triển khai không đáp ứng được.",
+                "impact": "Làm tăng tỷ lệ hủy đơn hàng, phát sinh khiếu nại và giảm uy tín thương hiệu đối với khách hàng doanh nghiệp B2B.",
+                "solution": "AI Agent tự động đối chiếu danh mục sản phẩm, tồn khả dụng và thời gian triển khai theo bảng giá mới nhất trước khi xuất đề xuất kinh doanh."
+            },
+            {
+                "issue": "Yêu cầu thiếu ngân sách hoặc vượt thẩm quyền bị đùn đẩy",
+                "root_cause": "Thiếu quy trình định tuyến tự động phân loại theo ma trận thẩm quyền duyệt (Approval Matrix). Các đề xuất vượt quyền chiết khấu hoặc thiếu thông tin bị chuyển qua lại không người theo dõi.",
+                "impact": "Kéo dài chu kỳ bán hàng (Lead Time), cơ hội tiềm năng bị bỏ lỡ và cấp quản lý bị quá tải duyệt các trường hợp không cần thiết.",
+                "solution": "Thiết lập phân quyền tự động có kiểm duyệt (Human-in-the-Loop): tự động xử lý các cơ hội trong hạn mức và tạo phiếu chuyển duyệt kèm cảnh báo hạn phản hồi cho Trưởng phòng."
+            }
+        ]
+
         return {
             "executive_summary": exec_summary,
+            "root_cause_analysis": root_causes,
             "key_findings": key_findings,
             "recommendations": recommendations,
         }

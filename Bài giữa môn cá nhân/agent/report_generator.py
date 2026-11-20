@@ -165,7 +165,18 @@ class HTMLReportGeneratorAgent:
             </div>
             """)
 
-        # 3. Render Key Findings & Recommendations
+        # 3. Render Root Cause Analysis, Key Findings & Recommendations
+        rca_rows_html = []
+        for idx, rc in enumerate(ai_insights.get("root_cause_analysis", []), 1):
+            rca_rows_html.append(f"""
+            <tr>
+                <td style="font-weight:700; color:#b52b65;">{html.escape(str(rc.get('issue', '')))}</td>
+                <td>{html.escape(str(rc.get('root_cause', '')))}</td>
+                <td style="color:#4a355b;">{html.escape(str(rc.get('impact', '')))}</td>
+                <td style="color:#1b5a96; font-weight:600;">{html.escape(str(rc.get('solution', '')))}</td>
+            </tr>
+            """)
+
         findings_html = []
         for idx, f in enumerate(ai_insights.get("key_findings", []), 1):
             findings_html.append(f"""
@@ -248,11 +259,12 @@ class HTMLReportGeneratorAgent:
             </tr>
             """)
 
-        # 7. Render Bảng Dữ liệu Sạch Mẫu (12 dòng đầu)
-        sample_df = df.head(12).replace({np.nan: "-"})
+        # 7. Render Bảng Dữ liệu Sạch (Mặc định hiển thị tối đa 10 dòng + Nút hiển thị toàn bộ bảng nếu > 10 dòng)
+        sample_df = df.replace({np.nan: "-"})
+        total_clean_rows = len(sample_df)
         sample_headers = "".join(f"<th>{html.escape(str(c))}</th>" for c in sample_df.columns)
         sample_body_rows = []
-        for _, r in sample_df.iterrows():
+        for row_idx, (_, r) in enumerate(sample_df.iterrows()):
             cells = []
             for c in sample_df.columns:
                 val = r[c]
@@ -262,7 +274,16 @@ class HTMLReportGeneratorAgent:
                     cells.append(f"<td style='text-align:right;'>{val:,.0f}</td>" if abs(val) >= 1000 else f"<td style='text-align:right;'>{val:,.2f}</td>")
                 else:
                     cells.append(f"<td>{html.escape(str(val))}</td>")
-            sample_body_rows.append(f"<tr>{''.join(cells)}</tr>")
+            row_attr = ' class="extra-data-row" style="display:none;"' if row_idx >= 10 else ''
+            sample_body_rows.append(f"<tr{row_attr}>{''.join(cells)}</tr>")
+
+        toggle_clean_btn_html = f"""
+            <div style="text-align:center; padding:12px 0; border-top:1px dashed #e2d4ec; margin-top:8px;">
+                <button type="button" id="btnToggleFullCleanTable" onclick="toggleFullCleanTable()" style="padding:8px 18px; border-radius:999px; border:1.5px solid #cdb4db; background:#fff; color:#2b1d38; font-weight:700; font-size:0.84rem; cursor:pointer; box-shadow:0 2px 6px rgba(205,180,219,0.25);">
+                    👁️ Hiển thị toàn bộ bảng (Tổng số {total_clean_rows:,} dòng) ↓
+                </button>
+            </div>
+        """ if total_clean_rows > 10 else ""
 
         ts_svg_section = self._build_svg_time_series(analysis_result.get("time_series", {}))
 
@@ -627,26 +648,46 @@ class HTMLReportGeneratorAgent:
                 {"".join(kpi_cards_html)}
             </div>
 
-            <!-- 2. PHÂN TÍCH TRỰC QUAN -->
+            <!-- 2. PHÂN TÍCH NGUYÊN NHÂN GỐC RỄ (ROOT CAUSE ANALYSIS) -->
             <div class="section-title">
-                <span>2. Phân tích Trực quan Đa chiều (Visual Analytics)</span>
+                <span>2. Phân tích Nguyên nhân Gốc rễ & Điểm nghẽn Quy trình (Root Cause Analysis - RCA)</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:24%;">Vấn đề Nhận diện</th>
+                            <th style="width:32%;">Nguyên nhân Gốc rễ (Root Cause)</th>
+                            <th style="width:22%;">Mức độ Ảnh hưởng</th>
+                            <th style="width:22%;">Giải pháp Khắc phục từ AI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {"".join(rca_rows_html) if rca_rows_html else "<tr><td colspan='4'>Không có vấn đề cần xử lý</td></tr>"}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 3. PHÂN TÍCH TRỰC QUAN -->
+            <div class="section-title">
+                <span>3. Phân tích Trực quan Đa chiều (Visual Analytics)</span>
             </div>
             <div class="charts-grid">
                 {"".join(cat_charts_html)}
             </div>
             {ts_svg_section}
 
-            <!-- 3. PHÁT HIỆN CHUYÊN SÂU TỪ AI AGENT -->
+            <!-- 4. PHÁT HIỆN CHUYÊN SÂU TỪ AI AGENT (INSIGHTS) -->
             <div class="section-title">
-                <span>3. Các Phát hiện Chuyên sâu (Key Analytical Findings)</span>
+                <span>4. Nhận định & Phát hiện Chuyên sâu (Key Analytical Insights)</span>
             </div>
             <div class="findings-list">
                 {"".join(findings_html)}
             </div>
 
-            <!-- 4. MA TRẬN TƯƠNG QUAN & THỐNG KÊ MÔ TẢ -->
+            <!-- 5. MA TRẬN TƯƠNG QUAN & THỐNG KÊ MÔ TẢ -->
             <div class="section-title">
-                <span>4. Phân tích Thống kê Mô tả & Tương quan Biến định lượng</span>
+                <span>5. Phân tích Thống kê Mô tả & Tương quan Biến định lượng</span>
             </div>
             <div class="table-wrap">
                 <table>
@@ -687,9 +728,9 @@ class HTMLReportGeneratorAgent:
             </div>
             ''' if corr_rows_html else ''}
 
-            <!-- 5. KHUYẾN NGHỊ HÀNH ĐỘNG -->
+            <!-- 6. KHUYẾN NGHỊ HÀNH ĐỘNG -->
             <div class="section-title">
-                <span>5. Khuyến nghị Chiến lược từ AI Agent (Actionable Recommendations)</span>
+                <span>6. Khuyến nghị Chiến lược & Giải pháp từ AI Agent (Actionable Recommendations)</span>
             </div>
             <div class="table-wrap">
                 <table>
@@ -706,9 +747,9 @@ class HTMLReportGeneratorAgent:
                 </table>
             </div>
 
-            <!-- 6. NHẬT KÝ QUY TRÌNH LÀM SẠCH DỮ LIỆU ĐÃ DUYỆT -->
+            <!-- 7. NHẬT KÝ QUY TRÌNH LÀM SẠCH DỮ LIỆU ĐÃ DUYỆT -->
             <div class="section-title">
-                <span>6. Hồ sơ Kiểm toán Quy trình Làm sạch Dữ liệu (Human-in-the-Loop Audit Trail)</span>
+                <span>7. Hồ sơ Kiểm toán Quy trình Làm sạch Dữ liệu (Human-in-the-Loop Audit Trail)</span>
             </div>
             <div class="table-wrap">
                 <table>
@@ -728,9 +769,9 @@ class HTMLReportGeneratorAgent:
                 </table>
             </div>
 
-            <!-- 7. MẪU DỮ LIỆU SẠCH SAU PHÊ DUYỆT -->
+            <!-- 8. MẪU DỮ LIỆU SẠCH SAU PHÊ DUYỆT -->
             <div class="section-title">
-                <span>7. Trích xuất Dữ liệu Sạch sau Phê duyệt (12 bản ghi đầu tiên)</span>
+                <span>8. Bảng Dữ liệu Sạch sau Phê duyệt (Mặc định hiển thị tối đa 10 dòng đầu · Tổng {len(df):,} dòng)</span>
             </div>
             <div class="table-wrap">
                 <table>
@@ -741,6 +782,7 @@ class HTMLReportGeneratorAgent:
                         {"".join(sample_body_rows)}
                     </tbody>
                 </table>
+                {toggle_clean_btn_html}
             </div>
         </div>
 
@@ -749,6 +791,22 @@ class HTMLReportGeneratorAgent:
             <span>Báo cáo chuẩn HTML5 độc lập</span>
         </div>
     </div>
+    <script>
+        var _cleanTableExpanded = false;
+        function toggleFullCleanTable() {{
+            _cleanTableExpanded = !_cleanTableExpanded;
+            var rows = document.querySelectorAll('.extra-data-row');
+            for (var i = 0; i < rows.length; i++) {{
+                rows[i].style.display = _cleanTableExpanded ? 'table-row' : 'none';
+            }}
+            var btn = document.getElementById('btnToggleFullCleanTable');
+            if (btn) {{
+                btn.innerHTML = _cleanTableExpanded
+                    ? '▲ Thu gọn về 10 dòng đầu ↑'
+                    : '👁️ Hiển thị toàn bộ bảng (Tổng số {total_clean_rows:,} dòng) ↓';
+            }}
+        }}
+    </script>
 </body>
 </html>"""
         return html_doc

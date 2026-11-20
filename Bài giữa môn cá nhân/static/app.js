@@ -683,10 +683,10 @@ const alertBox = (type, title, items) =>
 /* ── STEPPER 5 CHẶNG TIẾN TRÌNH ── */
 const STAGES = [
   ['Nhập dữ liệu', 'Kiểm tra file'],
-  ['Làm sạch', 'Trùng, thiếu, sai'],
-  ['Xử lý', 'Phân tích & Suy luận AI'],
+  ['Làm sạch dữ liệu', 'Khử trùng, sửa lỗi'],
+  ['Phân tích dữ liệu', 'Thống kê & Đánh giá'],
   ['Xác nhận', 'Duyệt kết quả'],
-  ['Báo cáo', 'Dashboard & HTML'],
+  ['Báo cáo & Trực quan', 'Nguyên nhân, Insight, Giải pháp'],
 ];
 let maxStage = 1, curStage = 1;
 
@@ -1303,8 +1303,8 @@ function resetProcess() {
   $('procAlert').innerHTML = '';
   $('btnProcess').style.display = '';
   $('btnProcess').disabled = false;
-  $('btnProcess').innerHTML = '▶ Bắt đầu xử lý';
-  $('btnToConfirm').style.display = 'none';
+  $('btnProcess').innerHTML = '▶ Bắt đầu phân tích';
+  if ($('btnToConfirm')) $('btnToConfirm').style.display = 'none';
   if ($('chkConfirm')) {
     $('chkConfirm').checked = false;
     updConfirm();
@@ -1320,7 +1320,7 @@ async function runProcess() {
     return;
   }
   const btn = $('btnProcess');
-  busy(btn, true, 'Đang xử lý...');
+  busy(btn, true, 'Đang phân tích...');
   updateSystemStatus('processing');
   $('btnProcBack').disabled = true;
   $('proc0').className = 'proc run';
@@ -1365,8 +1365,8 @@ async function runProcess() {
 
     $('btnProcBack').disabled = false;
     btn.style.display = 'none';
-    $('btnToConfirm').style.display = '';
-    $('procAlert').innerHTML = alertBox('ok', '✓ Đã xử lý và phân tích xong. Bấm "Sang bước xác nhận" để duyệt kết quả trước khi xuất báo cáo HTML.', []);
+    if ($('btnToConfirm')) $('btnToConfirm').style.display = '';
+    $('procAlert').innerHTML = alertBox('ok', '✓ Đã phân tích dữ liệu xong. Bấm "Sang bước xác nhận" để duyệt kết quả trước khi xuất báo cáo.', []);
     maxStage = 4;
     renderConfirmStage();
     renderStepper();
@@ -1375,7 +1375,7 @@ async function runProcess() {
     $('btnProcBack').disabled = false;
     busy(btn, false);
     btn.innerHTML = '↻ Chạy lại';
-    $('procAlert').innerHTML = alertBox('err', 'Xử lý thất bại', [e.message]);
+    $('procAlert').innerHTML = alertBox('err', 'Phân tích thất bại', [e.message]);
     updateSystemStatus('ready');
   }
 }
@@ -1399,17 +1399,19 @@ function renderConfirmStage() {
   if (!analysisData || !lastCleaningReport) return;
 
   const findingsList = (analysisData.ai_insights?.key_findings || []).map(f => `${f.title}: ${f.detail}`);
-  $('confirmRecon').innerHTML = alertBox(
-    'ok',
-    `✓ Đối soát dữ liệu khớp hoàn toàn: ${fmt(lastCleaningReport.rows_before)} dòng gốc − ${fmt(lastCleaningReport.rows_dropped)} dòng loại = ${fmt(lastCleaningReport.rows_after)} dòng sạch (Đã chuẩn hóa ${fmt(lastCleaningReport.cells_modified_count)} ô).`,
-    findingsList.slice(0, 3)
-  );
+  if ($('confirmRecon')) {
+    $('confirmRecon').innerHTML = alertBox(
+      'ok',
+      `✓ Đối soát dữ liệu khớp hoàn toàn: ${fmt(lastCleaningReport.rows_before)} dòng gốc − ${fmt(lastCleaningReport.rows_dropped)} dòng loại = ${fmt(lastCleaningReport.rows_after)} dòng sạch (Đã chuẩn hóa ${fmt(lastCleaningReport.cells_modified_count)} ô).`,
+      findingsList.slice(0, 3)
+    );
+  }
 
-  $('confirmKpi').innerHTML = buildKpiHtml();
+  if ($('confirmKpi')) $('confirmKpi').innerHTML = buildKpiHtml();
 
   const cb0 = (analysisData.category_breakdowns && analysisData.category_breakdowns[0]) || null;
-  if (cb0 && cb0.items) {
-    $('confirmTableTitle').textContent = `Kết quả phân tích '${cb0.metric_col}' theo nhóm '${cb0.category_col}'`;
+  if (cb0 && cb0.items && $('confirmTable')) {
+    if ($('confirmTableTitle')) $('confirmTableTitle').textContent = `Kết quả phân tích '${cb0.metric_col}' theo nhóm '${cb0.category_col}'`;
     $('confirmTable').innerHTML = cb0.items.map((it, idx) => {
       const recBadge = idx === 0
         ? '<span class="badge g">Chủ lực (Mở rộng)</span>'
@@ -1426,12 +1428,16 @@ function renderConfirmStage() {
     }).join('');
   }
 
-  $('chkConfirm').checked = false;
-  updConfirm();
+  if ($('chkConfirm')) {
+    $('chkConfirm').checked = false;
+    updConfirm();
+  }
 }
 
 function updConfirm() {
-  $('btnConfirm').disabled = !$('chkConfirm').checked;
+  if ($('btnConfirm') && $('chkConfirm')) {
+    $('btnConfirm').disabled = !$('chkConfirm').checked;
+  }
 }
 
 function confirmExport() {
@@ -1445,7 +1451,7 @@ function confirmExport() {
   renderReportStage();
   updateSystemStatus('complete');
   setActiveNav('report');
-  showToast('Đã xác nhận', 'Báo cáo HTML và Dashboard đã được tạo thành công!', 'success');
+  showToast('Đã xác nhận', 'Báo cáo & Dashboard phân tích đã được tạo thành công!', 'success');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1453,6 +1459,7 @@ function confirmExport() {
    ═══════════════════════════════════════════════════════════════════════════ */
 function renderReportStage() {
   if (!analysisData || !lastCleaningReport) return;
+  isReportTableExpanded = false;
 
   const nowStr = new Date().toLocaleString('vi-VN');
   $('reportMeta').textContent = `File: ${currentDatasetName} · Xuất lúc ${nowStr} · Đã làm sạch ${fmt(lastCleaningReport.rows_before)} → ${fmt(lastCleaningReport.rows_after)} bản ghi (${fmt(lastCleaningReport.cells_modified_count)} ô chuẩn hóa)`;
@@ -1512,7 +1519,56 @@ function renderReportStage() {
     `;
   }
 
-  // Thẻ chi tiết từng phân khúc
+  // 1. Phân tích Nguyên nhân Gốc rễ (Root Cause Analysis - RCA)
+  const rca = analysisData?.ai_insights?.root_cause_analysis || [];
+  const elRca = $('rootCauseTable');
+  if (elRca) {
+    elRca.innerHTML = rca.map(item => `
+      <tr>
+        <td style="font-weight:700; color:#b52b65;">${esc(item.issue)}</td>
+        <td style="line-height:1.5;">${esc(item.root_cause)}</td>
+        <td style="color:#4a355b; font-size:.84rem;">${esc(item.impact)}</td>
+        <td style="color:#1b5a96; font-weight:600; font-size:.84rem;">${esc(item.solution)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="4" class="muted">Không có vấn đề cần xử lý</td></tr>';
+  }
+
+  // 2. Nhận định & Insights từ AI
+  const findings = analysisData?.ai_insights?.key_findings || [];
+  const elFindings = $('reportFindingsList');
+  if (elFindings) {
+    elFindings.innerHTML = findings.map((f, idx) => `
+      <div class="finding-card">
+        <div style="font-weight:700; color:#1d4e78; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+          <span style="background:var(--pastel-blue); color:#1d4e78; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;">${idx + 1}</span>
+          ${esc(f.title)}
+        </div>
+        <div style="color:var(--t2); font-size:.85rem; padding-left:30px;">${esc(f.detail)}</div>
+      </div>
+    `).join('') || '<div class="muted">Không có nhận định</div>';
+  }
+
+  // 3. Đề xuất Giải pháp Chiến lược từ AI
+  const recs = analysisData?.ai_insights?.recommendations || [];
+  const elRecs = $('reportRecsTable');
+  if (elRecs) {
+    elRecs.innerHTML = recs.map(r => {
+      const prio = String(r.priority || 'Cao');
+      const pClass = prio.toLowerCase().includes('cao') || prio.toLowerCase().includes('trọng') ? 'prio-high' : 'prio-med';
+      return `
+        <tr>
+          <td><span class="prio-badge ${pClass}">${esc(prio)}</span></td>
+          <td><strong>${esc(r.action)}</strong></td>
+          <td style="color:#4a355b;">${esc(r.impact)}</td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="3" class="muted">Không có khuyến nghị</td></tr>';
+  }
+
+  // 4. Bảng tổng hợp & Khuyến nghị (Tối đa 10 dòng + Nút hiển thị toàn bộ nếu vượt quá 10 dòng)
+  renderReportTable();
+
+  // 5. Thẻ chi tiết từng phân khúc
   $('programCards').innerHTML = items.map((it, idx) => {
     const pal = colStyle(idx);
     const badgeText = idx === 0 ? 'Hạng 1' : (idx === 1 ? 'Hạng 2' : (idx === 2 ? 'Hạng 3' : `Hạng ${idx + 1}`));
@@ -1534,8 +1590,36 @@ function renderReportStage() {
     </div>`;
   }).join('');
 
-  // Bảng tổng hợp & Khuyến nghị
-  $('reportTable').innerHTML = items.map((it, idx) => {
+  // Hiển thị iframe báo cáo HTML
+  const iframe = $('html-report-iframe');
+  if (iframe) {
+    iframe.srcdoc = currentHtmlReport;
+  }
+
+  // Khởi tạo 4 biểu đồ
+  setTimeout(renderMultiCharts, 80);
+  setTimeout(initScrollReveal, 120);
+}
+
+let isReportTableExpanded = false;
+
+function renderReportTable() {
+  const cb0 = (analysisData?.category_breakdowns && analysisData.category_breakdowns[0]) || { items: [] };
+  const items = cb0.items || [];
+  const primaryCol = (analysisData?.primary_metric || cb0.metric_col || '').toLowerCase();
+  const isMoney = ['revenue', 'doanh_thu', 'sales', 'amount', 'gia', 'price', 'luong', 'salary'].some(k => primaryCol.includes(k));
+  const currUnit = isMoney ? ' ₫' : '';
+  const tbody = $('reportTable');
+  const toggleWrap = $('reportTableToggleWrap');
+  const toggleBtn = $('btnToggleReportTable');
+  const badge = $('reportTableBadge');
+  if (!tbody) return;
+
+  const total = items.length;
+  // Giới hạn hiển thị tối đa 10 dòng ban đầu theo yêu cầu người dùng
+  const displayItems = (isReportTableExpanded || total <= 10) ? items : items.slice(0, 10);
+
+  tbody.innerHTML = displayItems.map((it, idx) => {
     return `<tr>
       <td style="font-weight:700">${esc(it.category)}</td>
       <td class="amt">${fmt(it.count)}${it.count_before && it.count_before !== it.count ? ` <span class="badge m" style="font-size:.7rem" title="Số dòng gốc trước khi lọc trùng">gốc: ${fmt(it.count_before)}</span>` : ''}</td>
@@ -1547,15 +1631,26 @@ function renderReportStage() {
     </tr>`;
   }).join('');
 
-  // Hiển thị iframe báo cáo HTML
-  const iframe = $('html-report-iframe');
-  if (iframe) {
-    iframe.srcdoc = currentHtmlReport;
+  if (toggleWrap && toggleBtn) {
+    if (total > 10) {
+      toggleWrap.style.display = 'flex';
+      if (isReportTableExpanded) {
+        toggleBtn.innerHTML = `▲ Thu gọn về 10 dòng đầu ↑`;
+        if (badge) badge.textContent = `Đang hiển thị toàn bộ ${total} dòng`;
+      } else {
+        toggleBtn.innerHTML = `👁️ Hiển thị toàn bộ bảng (Tổng số ${fmt(total)} dòng) ↓`;
+        if (badge) badge.textContent = `Mặc định hiển thị 10 / ${total} dòng`;
+      }
+    } else {
+      toggleWrap.style.display = 'none';
+      if (badge) badge.textContent = `Hiển thị đầy đủ ${total} dòng`;
+    }
   }
+}
 
-  // Khởi tạo 4 biểu đồ
-  setTimeout(renderMultiCharts, 80);
-  setTimeout(initScrollReveal, 120);
+function toggleReportTableExpand() {
+  isReportTableExpanded = !isReportTableExpanded;
+  renderReportTable();
 }
 
 function renderMultiCharts() {
@@ -1767,70 +1862,55 @@ function renderMultiCharts() {
     }));
   }
 
-  // 4. BIỂU ĐỒ RADAR 5 TRỤ CỘT CHẤT LƯỢNG DỮ LIỆU
-  const elRadar = $('radarHealthChart');
-  if (elRadar) {
-    const hInit = initialProfileData?.health_score || {};
-    const hClean = lastCleaningReport?.health_after || {};
-
-    charts.push(new Chart(elRadar, {
-      type: 'radar',
+  // 4. BIỂU ĐỒ CỘT NGANG (HORIZONTAL BAR) - XẾP HẠNG TOP PHÂN KHÚC (KHÔNG DÙNG RADAR LẠ)
+  const elHBar = $('horizontalBarChart');
+  if (elHBar) {
+    if ($('chart4Stat')) {
+      $('chart4Stat').innerHTML = `Xếp hạng <b>${Math.min(labels.length, 8)}</b> phân khúc dẫn đầu theo ${metricName.toLowerCase()}`;
+    }
+    charts.push(new Chart(elHBar, {
+      type: 'bar',
       data: {
-        labels: [
-          'Đầy đủ (Không trống ô)',
-          'Không trùng lặp bản ghi',
-          'Đúng định dạng chuẩn',
-          'Giá trị hợp lý (Không lỗi)',
-          'Mức độ sạch chung'
-        ],
-        datasets: [
-          {
-            label: 'Chưa làm sạch (Gốc)',
-            data: [
-              Number(hInit.completeness ?? 0),
-              Number(hInit.uniqueness ?? 0),
-              Number(hInit.consistency ?? 0),
-              Number(hInit.validity ?? 0),
-              Number(hInit.overall ?? 0)
-            ],
-            backgroundColor: 'rgba(255, 175, 204, 0.25)',
-            borderColor: '#ffafcc',
-            borderWidth: 2,
-            pointBackgroundColor: '#ffafcc',
-            pointBorderColor: '#2b1d38',
-            pointRadius: 4
-          },
-          {
-            label: 'Sau làm sạch (Human-Approved)',
-            data: [
-              Number(hClean.completeness ?? 98),
-              Number(hClean.uniqueness ?? 100),
-              Number(hClean.consistency ?? 98),
-              Number(hClean.validity ?? 98),
-              Number(hClean.overall ?? 98)
-            ],
-            backgroundColor: 'rgba(162, 210, 255, 0.35)',
-            borderColor: '#3b7db8',
-            borderWidth: 2.2,
-            pointBackgroundColor: '#a2d2ff',
-            pointBorderColor: '#16324f',
-            pointRadius: 4
-          }
-        ]
+        labels: labels.slice(0, 8),
+        datasets: [{
+          label: `${metricName} (${currUnit.trim() || 'đơn vị'})`,
+          data: sums.slice(0, 8),
+          backgroundColor: [
+            'rgba(255, 175, 204, 0.85)',
+            'rgba(162, 210, 255, 0.85)',
+            'rgba(205, 180, 219, 0.85)',
+            'rgba(255, 200, 221, 0.85)',
+            'rgba(189, 224, 254, 0.85)',
+            'rgba(181, 148, 204, 0.85)',
+            'rgba(247, 182, 210, 0.85)',
+            'rgba(141, 198, 255, 0.85)'
+          ],
+          borderColor: '#2b1d38',
+          borderWidth: 1.2,
+          borderRadius: 6
+        }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        scales: {
-          r: {
-            angleLines: { color: '#f3e5f8' },
-            grid: { color: '#f3e5f8' },
-            pointLabels: { color: '#2b1d38', font: { size: 10.5, weight: '600' } },
-            ticks: { display: false, min: 0, max: 100 }
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${metricName}: ${fmt(ctx.raw)}${currUnit}`
+            }
           }
         },
-        plugins: {
-          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: '#2b1d38' } }
+        scales: {
+          x: {
+            grid: { color: 'rgba(205, 180, 219, 0.2)' },
+            ticks: { callback: v => fmtS(v) }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { weight: '600' } }
+          }
         }
       }
     }));
