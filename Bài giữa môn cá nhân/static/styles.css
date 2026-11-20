@@ -2669,4 +2669,36 @@ details.tpl summary {
   border-top: 1px dashed var(--border-soft);
 }
 
+/* HỘP GIẢI THÍCH & CHÚ THÍCH DƯỚI MỖI BIỂU ĐỒ */
+.chart-explain-box {
+  margin-top: 14px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, #fcf9fe, #f6faff);
+  border: 1px solid #eadcf2;
+  border-left: 3.5px solid var(--pastel-purple);
+  border-radius: var(--r-md);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--t2);
+}
+
+.chart-explain-box .ce-row {
+  margin-bottom: 4px;
+}
+
+.chart-explain-box .ce-row:last-child {
+  margin-bottom: 0;
+}
+
+.chart-explain-box .ce-tag {
+  font-weight: 700;
+  color: var(--t1);
+}
+
+.chart-explain-box .ce-note {
+  color: #5c4970;
+  font-size: 0.77rem;
+}
+
+
 

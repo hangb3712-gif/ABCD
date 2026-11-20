@@ -10,7 +10,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600;1,700;1,800&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css?v=4.6">
+  <link rel="stylesheet" href="/static/styles.css?v=4.8">
 </head>
 
 <body>
@@ -483,7 +483,13 @@
       <div class="kpi-grid" id="reportKpi"></div>
 
       <!-- KHUNG TỔNG HỢP CHỈ SỐ DOANH THU & HIỆU SUẤT TÀI CHÍNH -->
-      <div id="revenueExecutiveBanner" style="display:none;margin-bottom:22px"></div>
+      <div id="revenueExecutiveBanner" style="display:none;margin-bottom:18px"></div>
+
+      <!-- TÓM TẮT ĐIỀU HÀNH (EXECUTIVE SUMMARY) -->
+      <div class="card" id="reportExecSummaryCard" style="display:none;background:linear-gradient(135deg,#fff,#faf5fc);border-left:5px solid #cdb4db;margin-bottom:22px">
+        <div style="font-size:.78rem;font-weight:800;letter-spacing:.05em;color:#6e4a8c;text-transform:uppercase;margin-bottom:6px">📋 TÓM TẮT ĐIỀU HÀNH TỪ AI AGENT (EXECUTIVE SUMMARY)</div>
+        <p id="reportExecSummary" style="margin:0;color:var(--t1);font-size:.92rem;line-height:1.65"></p>
+      </div>
 
       <!-- 1. PHÂN TÍCH NGUYÊN NHÂN GỐC RỄ (ROOT CAUSE ANALYSIS - RCA) -->
       <div class="card" style="border-left: 5px solid var(--accent-pink); margin-bottom: 22px;">
@@ -502,10 +508,11 @@
           <table>
             <thead>
               <tr>
-                <th style="width:22%;">Vấn đề Nhận diện</th>
-                <th style="width:34%;">Nguyên nhân Gốc rễ (Root Cause)</th>
-                <th style="width:22%;">Mức độ Ảnh hưởng</th>
-                <th style="width:22%;">Giải pháp Ứng dụng AI</th>
+                <th style="width:14%;">Khâu &amp; Mức độ</th>
+                <th style="width:20%;">Vấn đề Nhận diện</th>
+                <th style="width:28%;">Nguyên nhân Gốc rễ (Root Cause)</th>
+                <th style="width:19%;">Mức độ Ảnh hưởng</th>
+                <th style="width:19%;">Giải pháp Ứng dụng AI</th>
               </tr>
             </thead>
             <tbody id="rootCauseTable"></tbody>
@@ -526,22 +533,24 @@
         <div class="findings-list" id="reportFindingsList"></div>
       </div>
 
-      <!-- 3. ĐỀ XUẤT GIẢI PHÁP CHIẾN LƯỢC TỪ AI (ACTIONABLE SOLUTIONS) -->
+      <!-- 3. ĐỀ XUẤT GIẢI PHÁP CHIẾN LƯỢC & LỘ TRÌNH TRIỂN KHAI -->
       <div class="card" style="border-left: 5px solid var(--pastel-purple); margin-bottom: 22px;">
         <div
           style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
           <h3 style="margin:0; font-size:1.15rem; color:#4a355b;">
-            🚀 3. Đề xuất Giải pháp Hành động (Actionable Solutions &amp; AI Recommendations)
+            🚀 3. Đề xuất Giải pháp Hành động &amp; Lộ trình Triển khai (Actionable Solutions)
           </h3>
-          <span class="chip" style="background:#f4ecf8; color:#4a355b; border-color:#cdb4db;">Lộ trình cải tiến hiệu
+          <span class="chip" style="background:#f4ecf8; color:#4a355b; border-color:#cdb4db;">Kế hoạch cải tiến hiệu
             suất</span>
         </div>
         <div class="tbl-wrap">
           <table>
             <thead>
               <tr>
-                <th style="width:130px;">Mức ưu tiên</th>
+                <th style="width:110px;">Mức ưu tiên</th>
                 <th>Giải pháp Khuyến nghị</th>
+                <th style="width:165px;">Bộ phận phụ trách</th>
+                <th style="width:125px;">Lộ trình</th>
                 <th>Tác động Kỳ vọng</th>
               </tr>
             </thead>
@@ -550,20 +559,23 @@
         </div>
       </div>
 
-      <!-- 4. HỆ THỐNG 4 BIỂU ĐỒ TRỰC QUAN HÓA QUEN THUỘC (KHÔNG DÙNG BIỂU ĐỒ LẠ) -->
-      <h3 style="font-size:1.05rem;font-weight:700;margin-bottom:12px">Hệ Thống Biểu Đồ Trực Quan Hóa Quen Thuộc &amp;
-        Doanh Thu</h3>
+      <!-- 4. HỆ THỐNG 8 BIỂU ĐỒ TRỰC QUAN HÓA ĐA CHIỀU QUEN THUỘC (KHÔNG DÙNG BIỂU ĐỒ LẠ) -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h3 style="font-size:1.1rem;font-weight:700;margin:0">📊 4. Hệ Thống 8 Biểu Đồ Trực Quan Hóa Đa Chiều (Chuẩn Kinh Doanh)</h3>
+        <span class="chip" style="background:#eaf4ff;color:#1d4e78;border-color:#bde0fe">100% Biểu đồ quen thuộc · Đồng nhất dữ liệu gốc &amp; sạch</span>
+      </div>
       <div class="multi-charts-grid">
         <!-- BIỂU ĐỒ 1: SO SÁNH CỘT KÉP (BAR) -->
         <div class="chart-card reveal-on-scroll">
           <div class="chart-card-head">
             <div>
-              <h3>1. So sánh Đối chiếu theo Phân khúc (Chưa làm sạch vs Đã làm sạch)</h3>
+              <h3>1. Đối chiếu Giá trị theo Phân khúc (Gốc vs Sạch)</h3>
               <div class="chart-stat-sub" id="chart1Stat"></div>
             </div>
             <span class="chart-badge">Biểu đồ Cột Kép</span>
           </div>
           <div class="chart-box-large"><canvas id="marginChart"></canvas></div>
+          <div class="chart-explain-box" id="chart1Explain"></div>
         </div>
 
         <!-- BIỂU ĐỒ 2: CƠ CẤU TỶ TRỌNG ĐÓNG GÓP (DOUGHNUT) -->
@@ -576,6 +588,7 @@
             <span class="chart-badge">Biểu đồ Donut</span>
           </div>
           <div class="chart-box-large"><canvas id="revenueChart"></canvas></div>
+          <div class="chart-explain-box" id="chart2Explain"></div>
         </div>
 
         <!-- BIỂU ĐỒ 3: XU HƯỚNG THEO THỜI GIAN HOẶC TÍCH LŨY (AREA/LINE) -->
@@ -585,21 +598,117 @@
               <h3 id="trendChartTitle">3. Xu hướng Chuỗi Thời gian / Tích lũy</h3>
               <div class="chart-stat-sub" id="chart3Stat"></div>
             </div>
-            <span class="chart-badge">Biểu đồ Vùng / Đường</span>
+            <span class="chart-badge">Biểu đồ Đường / Vùng</span>
           </div>
           <div class="chart-box-large"><canvas id="trendChart"></canvas></div>
+          <div class="chart-explain-box" id="chart3Explain"></div>
         </div>
 
-        <!-- BIỂU ĐỒ 4: XẾP HẠNG TOP PHÂN KHÚC (HORIZONTAL BAR - KHÔNG DÙNG RADAR LẠ) -->
+        <!-- BIỂU ĐỒ 4: XẾP HẠNG TOP PHÂN KHÚC (HORIZONTAL BAR) -->
         <div class="chart-card reveal-on-scroll">
           <div class="chart-card-head">
             <div>
-              <h3>4. Xếp hạng Top Phân khúc / Đóng góp</h3>
+              <h3>4. Xếp hạng Top Phân khúc Dẫn đầu</h3>
               <div class="chart-stat-sub" id="chart4Stat"></div>
             </div>
             <span class="chart-badge">Biểu đồ Cột Ngang</span>
           </div>
           <div class="chart-box-large"><canvas id="horizontalBarChart"></canvas></div>
+          <div class="chart-explain-box" id="chart4Explain"></div>
+        </div>
+
+        <!-- BIỂU ĐỒ 5: SO SÁNH SỐ LƯỢNG BẢN GHI / ĐƠN HÀNG (GỐC VS SẠCH) -->
+        <div class="chart-card reveal-on-scroll">
+          <div class="chart-card-head">
+            <div>
+              <h3>5. Số lượng Bản ghi theo Phân khúc (Gốc vs Sạch)</h3>
+              <div class="chart-stat-sub" id="chart5Stat"></div>
+            </div>
+            <span class="chart-badge">Biểu đồ Cột Đứng</span>
+          </div>
+          <div class="chart-box-large"><canvas id="countCompareChart"></canvas></div>
+          <div class="chart-explain-box" id="chart5Explain"></div>
+        </div>
+
+        <!-- BIỂU ĐỒ 6: PHÂN TÍCH PARETO 80/20 (CỘT + ĐƯỜNG TÍCH LŨY %) -->
+        <div class="chart-card reveal-on-scroll">
+          <div class="chart-card-head">
+            <div>
+              <h3>6. Phân tích Pareto 80/20 (Giá trị &amp; Tích lũy %)</h3>
+              <div class="chart-stat-sub" id="chart6Stat"></div>
+            </div>
+            <span class="chart-badge">Biểu đồ Cột + Đường</span>
+          </div>
+          <div class="chart-box-large"><canvas id="paretoChart"></canvas></div>
+          <div class="chart-explain-box" id="chart6Explain"></div>
+        </div>
+
+        <!-- BIỂU ĐỒ 7: SO SÁNH TRUNG BÌNH (MEAN) VS TRUNG VỊ (MEDIAN) -->
+        <div class="chart-card reveal-on-scroll">
+          <div class="chart-card-head">
+            <div>
+              <h3>7. Đối chiếu Trung bình (Mean) vs Trung vị (Median)</h3>
+              <div class="chart-stat-sub" id="chart7Stat"></div>
+            </div>
+            <span class="chart-badge">Biểu đồ Cột Kép</span>
+          </div>
+          <div class="chart-box-large"><canvas id="meanMedianChart"></canvas></div>
+          <div class="chart-explain-box" id="chart7Explain"></div>
+        </div>
+
+        <!-- BIỂU ĐỒ 8: CẢI THIỆN CHẤT LƯỢNG DỮ LIỆU TRƯỚC VS SAU LÀM SẠCH -->
+        <div class="chart-card reveal-on-scroll">
+          <div class="chart-card-head">
+            <div>
+              <h3>8. Cải thiện Mức độ Sạch Dữ liệu (Trước vs Sau)</h3>
+              <div class="chart-stat-sub" id="chart8Stat"></div>
+            </div>
+            <span class="chart-badge">Biểu đồ Cột Ngang</span>
+          </div>
+          <div class="chart-box-large"><canvas id="qualityCompareChart"></canvas></div>
+          <div class="chart-explain-box" id="chart8Explain"></div>
+        </div>
+      </div>
+
+      <!-- 5. THỐNG KÊ MÔ TẢ CHI TIẾT & TƯƠNG QUAN BIẾN ĐỊNH LƯỢNG -->
+      <div class="card" style="margin-bottom:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <h3 style="margin:0">📐 5. Phân tích Thống kê Mô tả Chi tiết (Descriptive Statistics)</h3>
+          <span class="muted" style="font-size:.8rem">Tính toán trên toàn bộ các biến định lượng đã làm sạch</span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Biến định lượng</th>
+                <th style="text-align:right">Số mẫu (N)</th>
+                <th style="text-align:right">Trung bình (Mean)</th>
+                <th style="text-align:right">Độ lệch chuẩn (SD)</th>
+                <th style="text-align:right">Nhỏ nhất (Min)</th>
+                <th style="text-align:right">Phân vị 25%</th>
+                <th style="text-align:right">Trung vị (Median)</th>
+                <th style="text-align:right">Phân vị 75%</th>
+                <th style="text-align:right">Lớn nhất (Max)</th>
+              </tr>
+            </thead>
+            <tbody id="reportStatsTable"></tbody>
+          </table>
+        </div>
+        <div id="reportCorrWrap" style="margin-top:18px;display:none">
+          <h4 style="font-size:.95rem;margin-bottom:10px;color:var(--t1)">🔗 Phân tích Tương quan Pearson giữa các Biến số</h4>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cặp biến phân tích</th>
+                  <th style="text-align:right">Hệ số tương quan (r)</th>
+                  <th>Mức độ liên kết</th>
+                  <th>Chiều hướng &amp; Đánh giá</th>
+                </tr>
+              </thead>
+              <tbody id="reportCorrTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -960,7 +1069,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="/static/app.js?v=4.6"></script>
+  <script src="/static/app.js?v=4.8"></script>
 </body>
 
 </html>

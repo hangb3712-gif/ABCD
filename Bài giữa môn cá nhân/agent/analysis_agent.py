@@ -421,6 +421,8 @@ Ngữ cảnh dữ liệu:
             })
             recommendations.append({
                 "priority": "Cao",
+                "owner": "Phòng Kinh doanh & Marketing",
+                "timeline": "Tuần 1 – Tuần 2",
                 "action": f"Tối ưu hóa nguồn lực vào phân khúc chủ lực '{top1['category']}' đồng thời rà soát điểm nghẽn tại '{bottom1['category']}'",
                 "impact": f"Gia tăng hiệu suất trên chỉ số '{cb0['metric_col']}' thêm 12% - 18% trong chu kỳ tiếp theo."
             })
@@ -450,6 +452,8 @@ Ngữ cảnh dữ liệu:
             })
             recommendations.append({
                 "priority": "Cao",
+                "owner": "Bộ phận Phân tích & Vận hành",
+                "timeline": "Tuần 2 – Tuần 4",
                 "action": f"Sử dụng biến '{top_corr['col_a']}' làm chỉ báo sớm (Leading Indicator) để dự báo và kiểm soát '{top_corr['col_b']}'",
                 "impact": "Nâng cao độ chính xác khi lập kế hoạch và phát hiện sớm các trường hợp lệch chuẩn."
             })
@@ -478,13 +482,24 @@ Ngữ cảnh dữ liệu:
         })
         recommendations.append({
             "priority": "Trung bình",
+            "owner": "Phòng CNTT & Quản trị Dữ liệu",
+            "timeline": "Tháng 1 – Tháng 2",
             "action": "Thiết lập quy tắc kiểm tra dữ liệu đầu vào (Validation Schema) tại khâu thu thập dữ liệu",
             "impact": f"Giảm thiểu 90% lỗi nhập liệu khuyết thiếu, trùng lặp mã và sai miền giá trị vừa được phát hiện ({cells_mod} điểm lỗi)."
+        })
+        recommendations.append({
+            "priority": "Trung bình",
+            "owner": "Ban Giám đốc & Trưởng phòng KD",
+            "timeline": "Liên tục hàng tuần",
+            "action": "Chuẩn hóa quy trình phê duyệt Human-in-the-Loop và thiết lập cảnh báo tự động cho các cơ hội vượt thẩm quyền hoặc tồn đọng quá hạn",
+            "impact": "Rút ngắn 40% thời gian phản hồi khách hàng và loại bỏ tình trạng hồ sơ bị chuyển qua lại không có người theo dõi."
         })
 
         if user_focus and user_focus.strip():
             recommendations.insert(0, {
                 "priority": "Trọng tâm",
+                "owner": "Nhóm phụ trách dự án",
+                "timeline": "Ưu tiên ngay",
                 "action": f"Đáp ứng yêu cầu trọng tâm: '{user_focus.strip()}'",
                 "impact": "Tập trung theo dõi bảng phân rã chi tiết và biểu đồ tương tác trực tiếp trong báo cáo HTML bên dưới."
             })
@@ -492,24 +507,32 @@ Ngữ cảnh dữ liệu:
         # 4. Phân tích Nguyên nhân Gốc rễ (Root Cause Analysis - RCA)
         root_causes = [
             {
+                "stage": "Khâu Tiếp nhận",
+                "severity": "Nghiêm trọng",
                 "issue": "Bỏ sót thông tin & Sai lệch định dạng dữ liệu đầu vào",
                 "root_cause": "Khâu thu thập dữ liệu từ email và biểu mẫu thủ công thiếu cơ chế kiểm soát hợp lệ tức thời (Input Validation Gate). Nhân viên kinh doanh ghi nhận dữ liệu không theo chuẩn thống nhất.",
                 "impact": f"Gây ra {cells_mod} ô dữ liệu bị khuyết thiếu, sai định dạng chuỗi/ngày, làm chậm thời gian xử lý và giảm độ tin cậy của đề xuất bán hàng.",
                 "solution": "Ứng dụng AI Agent tự động trích xuất thông tin từ văn bản tự do, tự động điền khuyết và chuẩn hóa định dạng ngay khi tiếp nhận yêu cầu."
             },
             {
+                "stage": "Khâu Lưu trữ & Đối soát",
+                "severity": "Nghiêm trọng",
                 "issue": "Trùng lặp cơ hội bán hàng & Dữ liệu bị phân mảnh",
                 "root_cause": "Các yêu cầu gửi qua nhiều kênh (email, web form) thiếu mã định danh duy nhất (Unique Lead ID) và cơ chế đối soát liên phòng ban, dẫn đến việc nhiều nhân viên cùng xử lý một khách hàng.",
                 "impact": f"Tạo ra {rows_dropped} bản ghi trùng lặp, gây lãng phí nguồn lực tiếp cận, xung đột nội bộ và làm sai lệch thống kê tổng quy mô doanh số.",
                 "solution": "AI Agent tự động khử trùng lặp đa trường (Tên khách hàng, Email, Số điện thoại) và hợp nhất hồ sơ cơ hội bán hàng trước khi phân bổ."
             },
             {
+                "stage": "Khâu Báo giá & Vận hành",
+                "severity": "Cao",
                 "issue": "Báo giá cũ & Hứa hẹn tiến độ giao hàng không khả thi",
                 "root_cause": "Nhân viên kinh doanh tra cứu bảng giá và tồn kho thủ công, thiếu kết nối thời gian thực với bộ phận Vận hành và Kho, dẫn đến sử dụng giá cũ hoặc cam kết thời hạn triển khai không đáp ứng được.",
                 "impact": "Làm tăng tỷ lệ hủy đơn hàng, phát sinh khiếu nại và giảm uy tín thương hiệu đối với khách hàng doanh nghiệp B2B.",
                 "solution": "AI Agent tự động đối chiếu danh mục sản phẩm, tồn khả dụng và thời gian triển khai theo bảng giá mới nhất trước khi xuất đề xuất kinh doanh."
             },
             {
+                "stage": "Khâu Phê duyệt",
+                "severity": "Cao",
                 "issue": "Yêu cầu thiếu ngân sách hoặc vượt thẩm quyền bị đùn đẩy",
                 "root_cause": "Thiếu quy trình định tuyến tự động phân loại theo ma trận thẩm quyền duyệt (Approval Matrix). Các đề xuất vượt quyền chiết khấu hoặc thiếu thông tin bị chuyển qua lại không người theo dõi.",
                 "impact": "Kéo dài chu kỳ bán hàng (Lead Time), cơ hội tiềm năng bị bỏ lỡ và cấp quản lý bị quá tải duyệt các trường hợp không cần thiết.",

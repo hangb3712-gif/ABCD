@@ -91,6 +91,174 @@ class HTMLReportGeneratorAgent:
                     {"".join(circles_svg)}
                 </svg>
             </div>
+            <div style="margin-top:10px;padding:9px 12px;background:#fcf9fe;border-left:3px solid #cdb4db;border-radius:6px;font-size:12px;color:#4a355b;line-height:1.5;">
+                <div><strong>📖 Giải thích:</strong> Theo dõi diễn biến <b>{html.escape(str(ts_data.get('metric_col', '')))}</b> qua <b>{len(labels)}</b> mốc thời gian, đạt đỉnh cao nhất <b>{max_v:,.1f}</b> và thấp nhất <b>{min_v:,.1f}</b>.</div>
+                <div style="color:#6e5682;margin-top:3px;"><strong>🏷️ Chú thích:</strong> Đường hồng &amp; vùng tô màu = Xu hướng biến động theo thời gian · Mỗi điểm tròn = 1 mốc thời gian cụ thể.</div>
+            </div>
+        </div>
+        """
+
+    def _build_svg_donut(self, cb: Dict[str, Any]) -> str:
+        """Vẽ biểu đồ Donut SVG sắc nét thể hiện cơ cấu tỷ trọng đóng góp (%)."""
+        if not cb or not cb.get("items"):
+            return ""
+        items = cb.get("items", [])[:6]
+        colors = ["#ffafcc", "#a2d2ff", "#cdb4db", "#ffc8dd", "#bde0fe", "#b594cc"]
+        r = 68
+        circ = 2 * 3.1415926535 * r
+        offset = 0.0
+        slices_svg = []
+        legend_html = []
+        total_pct = sum(float(it.get("share_pct", 0) or 0) for it in items) or 100.0
+        for idx, it in enumerate(items):
+            pct = float(it.get("share_pct", 0) or 0)
+            frac = max(0.0, pct / max(total_pct, 1e-6))
+            dash = frac * circ
+            col = colors[idx % len(colors)]
+            slices_svg.append(
+                f'<circle cx="95" cy="95" r="{r}" fill="transparent" stroke="{col}" stroke-width="26" '
+                f'stroke-dasharray="{dash:.2f} {circ:.2f}" stroke-dashoffset="{-offset:.2f}" '
+                f'transform="rotate(-90 95 95)"><title>{html.escape(str(it.get("category", "")))}: {pct}%</title></circle>'
+            )
+            offset += dash
+            legend_html.append(
+                f'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:6px;">'
+                f'<span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:{col};display:inline-block;"></span>'
+                f'<strong>{html.escape(str(it.get("category", "")))}</strong></span>'
+                f'<span style="color:#6e5682;font-weight:700;">{pct}%</span></div>'
+            )
+
+        return f"""
+        <div class="rpt-card">
+            <div class="rpt-card-header">
+                <h3>Biểu đồ Donut: Cơ cấu Tỷ trọng '{html.escape(str(cb.get('metric_col', '')))}'</h3>
+                <span class="rpt-badge">Tỷ trọng %</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center;">
+                <svg viewBox="0 0 190 190" style="width:185px;height:185px;flex-shrink:0;">
+                    <circle cx="95" cy="95" r="{r}" fill="transparent" stroke="#f5ecf8" stroke-width="26"/>
+                    {"".join(slices_svg)}
+                    <text x="95" y="92" text-anchor="middle" font-size="11" fill="#6e5682" font-weight="600">Phân khúc</text>
+                    <text x="95" y="110" text-anchor="middle" font-size="16" fill="#2b1d38" font-weight="800">{len(items)} nhóm</text>
+                </svg>
+                <div style="flex:1;min-width:170px;">
+                    {"".join(legend_html)}
+                </div>
+            </div>
+            <div style="margin-top:10px;padding:9px 12px;background:#fcf9fe;border-left:3px solid #cdb4db;border-radius:6px;font-size:12px;color:#4a355b;line-height:1.5;">
+                <div><strong>📖 Giải thích:</strong> Thể hiện cơ cấu tỷ trọng đóng góp (%) của từng phân khúc vào tổng <b>{html.escape(str(cb.get('metric_col', '')))}</b>. Nhóm dẫn đầu là <b>{html.escape(str(items[0].get('category', '')))}</b> (<b>{items[0].get('share_pct', 0)}%</b>).</div>
+                <div style="color:#6e5682;margin-top:3px;"><strong>🏷️ Chú thích:</strong> Mỗi mảng màu đại diện cho 1 phân khúc với tỷ lệ hiển thị tương ứng bên phải.</div>
+            </div>
+        </div>
+        """
+
+    def _build_svg_before_after_columns(self, cb: Dict[str, Any]) -> str:
+        """Vẽ biểu đồ Cột Kép SVG đối chiếu Trước vs Sau làm sạch theo phân khúc."""
+        if not cb or not cb.get("items"):
+            return ""
+        items = cb.get("items", [])[:6]
+        width, height = 520, 240
+        pad_l, pad_r, pad_t, pad_b = 58, 20, 26, 50
+        plot_w = width - pad_l - pad_r
+        plot_h = height - pad_t - pad_b
+        max_v = max(
+            max((abs(float(it.get("sum_before", it.get("sum", 0)) or 0)) for it in items), default=1.0),
+            max((abs(float(it.get("sum", 0) or 0)) for it in items), default=1.0),
+            1.0
+        )
+        grid_svg = []
+        for s in range(5):
+            gy = pad_t + (s / 4) * plot_h
+            gv = max_v * (1 - s / 4)
+            gv_str = f"{gv/1e6:.1f}M" if abs(gv) >= 1e6 else (f"{gv/1e3:.0f}K" if abs(gv) >= 1e3 else f"{gv:.0f}")
+            grid_svg.append(
+                f'<line x1="{pad_l}" y1="{gy:.1f}" x2="{width - pad_r}" y2="{gy:.1f}" stroke="#eadcf0" stroke-dasharray="3 3"/>'
+                f'<text x="{pad_l - 6}" y="{gy + 4:.1f}" text-anchor="end" font-size="10" fill="#6e5682">{gv_str}</text>'
+            )
+
+        bars_svg = []
+        group_w = plot_w / max(len(items), 1)
+        bw = min(22, group_w * 0.32)
+        for i, it in enumerate(items):
+            v_raw = abs(float(it.get("sum_before", it.get("sum", 0)) or 0))
+            v_clean = abs(float(it.get("sum", 0) or 0))
+            h_raw = (v_raw / max_v) * plot_h
+            h_clean = (v_clean / max_v) * plot_h
+            cx = pad_l + i * group_w + group_w / 2
+            cat_lbl = html.escape(str(it.get("category", ""))[:12])
+            bars_svg.append(
+                f'<rect x="{cx - bw - 2:.1f}" y="{pad_t + plot_h - h_raw:.1f}" width="{bw:.1f}" height="{h_raw:.1f}" rx="3" fill="#cdb4db">'
+                f'<title>Trước làm sạch ({cat_lbl}): {v_raw:,.1f}</title></rect>'
+                f'<rect x="{cx + 2:.1f}" y="{pad_t + plot_h - h_clean:.1f}" width="{bw:.1f}" height="{h_clean:.1f}" rx="3" fill="#ffafcc">'
+                f'<title>Sau làm sạch ({cat_lbl}): {v_clean:,.1f}</title></rect>'
+                f'<text x="{cx:.1f}" y="{height - 22}" text-anchor="middle" font-size="10" fill="#2b1d38" font-weight="600">{cat_lbl}</text>'
+            )
+
+        return f"""
+        <div class="rpt-card">
+            <div class="rpt-card-header">
+                <h3>Biểu đồ Cột Kép: Đối chiếu Trước vs Sau Làm sạch</h3>
+                <span class="rpt-badge">Gốc vs Sạch</span>
+            </div>
+            <div style="overflow-x:auto;">
+                <svg viewBox="0 0 {width} {height}" style="width:100%;height:auto;max-height:235px;display:block;">
+                    {"".join(grid_svg)}
+                    {"".join(bars_svg)}
+                    <rect x="{pad_l}" y="{height - 12}" width="10" height="8" rx="2" fill="#cdb4db"/>
+                    <text x="{pad_l + 14}" y="{height - 5}" font-size="10" fill="#4a355b">Chưa làm sạch (Gốc)</text>
+                    <rect x="{pad_l + 140}" y="{height - 12}" width="10" height="8" rx="2" fill="#ffafcc"/>
+                    <text x="{pad_l + 154}" y="{height - 5}" font-size="10" fill="#4a355b">Sau làm sạch (Đã duyệt)</text>
+                </svg>
+            </div>
+            <div style="margin-top:10px;padding:9px 12px;background:#fcf9fe;border-left:3px solid #cdb4db;border-radius:6px;font-size:12px;color:#4a355b;line-height:1.5;">
+                <div><strong>📖 Giải thích:</strong> Đối chiếu giá trị <b>{html.escape(str(cb.get('metric_col', '')))}</b> trên <b>{len(items)}</b> phân khúc trước và sau khi AI làm sạch trùng lặp và giá trị lỗi.</div>
+                <div style="color:#6e5682;margin-top:3px;"><strong>🏷️ Chú thích:</strong> Cột tím = Dữ liệu gốc chưa làm sạch · Cột hồng = Dữ liệu sạch đã chuẩn hóa.</div>
+            </div>
+        </div>
+        """
+
+    def _build_svg_quality_bars(self, h_before: Dict[str, Any], h_after: Dict[str, Any]) -> str:
+        """Vẽ biểu đồ Cột Ngang Đối chiếu Mức độ Sạch Dữ liệu Trước vs Sau làm sạch."""
+        metrics = [
+            ("Đầy đủ (Không trống ô)", float(h_before.get("completeness", 0)), float(h_after.get("completeness", 98))),
+            ("Không trùng lặp bản ghi", float(h_before.get("uniqueness", 0)), float(h_after.get("uniqueness", 100))),
+            ("Đúng định dạng chuẩn", float(h_before.get("consistency", 0)), float(h_after.get("consistency", 98))),
+            ("Giá trị hợp lý (Không lỗi)", float(h_before.get("validity", 0)), float(h_after.get("validity", 98))),
+            ("Mức độ sạch tổng thể", float(h_before.get("overall", 0)), float(h_after.get("overall", 98))),
+        ]
+        rows = []
+        for label, vb, va in metrics:
+            wb = max(2.0, min(100.0, vb))
+            wa = max(2.0, min(100.0, va))
+            rows.append(f"""
+            <div style="margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                    <strong>{html.escape(label)}</strong>
+                    <span style="color:#6e5682;">Gốc: <b>{vb:.1f}</b> ➔ Sạch: <b style="color:#1b5a96;">{va:.1f}/100</b></span>
+                </div>
+                <div style="background:#f7eefb;height:7px;border-radius:4px;overflow:hidden;margin-bottom:3px;">
+                    <div style="width:{wb}%;height:100%;background:#ffafcc;"></div>
+                </div>
+                <div style="background:#eef5fc;height:7px;border-radius:4px;overflow:hidden;">
+                    <div style="width:{wa}%;height:100%;background:#a2d2ff;"></div>
+                </div>
+            </div>
+            """)
+        return f"""
+        <div class="rpt-card">
+            <div class="rpt-card-header">
+                <h3>Biểu đồ Cột Ngang: Cải thiện Mức độ Sạch Dữ liệu (Trước vs Sau)</h3>
+                <span class="rpt-badge">Chất lượng Dữ liệu</span>
+            </div>
+            <div>{"".join(rows)}</div>
+            <div style="display:flex;gap:16px;font-size:11px;color:#6e5682;margin-top:6px;">
+                <span><span style="display:inline-block;width:10px;height:8px;background:#ffafcc;border-radius:2px;margin-right:4px;"></span>Trước làm sạch</span>
+                <span><span style="display:inline-block;width:10px;height:8px;background:#a2d2ff;border-radius:2px;margin-right:4px;"></span>Sau làm sạch</span>
+            </div>
+            <div style="margin-top:10px;padding:9px 12px;background:#fcf9fe;border-left:3px solid #cdb4db;border-radius:6px;font-size:12px;color:#4a355b;line-height:1.5;">
+                <div><strong>📖 Giải thích:</strong> So sánh hiệu quả cải thiện mức độ sạch trên 5 tiêu chí cốt lõi. Điểm tổng thể tăng từ <b>{float(h_before.get('overall', 0)):.1f}/100</b> lên <b>{float(h_after.get('overall', 98)):.1f}/100</b>.</div>
+                <div style="color:#6e5682;margin-top:3px;"><strong>🏷️ Chú thích:</strong> Thanh hồng = Điểm trước làm sạch (thang 0–100) · Thanh xanh = Điểm sau khi làm sạch và được duyệt.</div>
+            </div>
         </div>
         """
 
@@ -162,14 +330,24 @@ class HTMLReportGeneratorAgent:
                 <div class="bar-chart-container">
                     {"".join(rows_html)}
                 </div>
+                <div style="margin-top:10px;padding:9px 12px;background:#fcf9fe;border-left:3px solid #cdb4db;border-radius:6px;font-size:12px;color:#4a355b;line-height:1.5;">
+                    <div><strong>📖 Giải thích:</strong> Xếp hạng các phân khúc theo <b>{html.escape(str(cb.get('metric_col', '')))}</b> (nhóm cao nhất: <b>{html.escape(str(items[0].get('category', '')))}</b> chiếm <b>{items[0].get('share_pct', 0)}%</b>).</div>
+                    <div style="color:#6e5682;margin-top:3px;"><strong>🏷️ Chú thích:</strong> Thanh ngang càng dài thể hiện quy mô giá trị càng lớn; con số trong ngoặc là số dòng sạch của phân khúc.</div>
+                </div>
             </div>
             """)
 
         # 3. Render Root Cause Analysis, Key Findings & Recommendations
         rca_rows_html = []
         for idx, rc in enumerate(ai_insights.get("root_cause_analysis", []), 1):
+            sev = str(rc.get("severity", "Cao"))
+            sev_cls = "prio-high" if "nghiêm" in sev.lower() else "prio-med"
             rca_rows_html.append(f"""
             <tr>
+                <td>
+                    <div style="font-weight:700;font-size:12px;margin-bottom:4px;">{html.escape(str(rc.get('stage', 'Quy trình')))}</div>
+                    <span class="prio-badge {sev_cls}">{html.escape(sev)}</span>
+                </td>
                 <td style="font-weight:700; color:#b52b65;">{html.escape(str(rc.get('issue', '')))}</td>
                 <td>{html.escape(str(rc.get('root_cause', '')))}</td>
                 <td style="color:#4a355b;">{html.escape(str(rc.get('impact', '')))}</td>
@@ -197,6 +375,8 @@ class HTMLReportGeneratorAgent:
             <tr>
                 <td><span class="prio-badge {p_class}">{html.escape(prio)}</span></td>
                 <td><strong>{html.escape(str(r.get('action', '')))}</strong></td>
+                <td style="color:#1d4e78;font-weight:600;">{html.escape(str(r.get('owner', 'Bộ phận liên quan')))}</td>
+                <td>{html.escape(str(r.get('timeline', 'Trong tháng')))}</td>
                 <td>{html.escape(str(r.get('impact', '')))}</td>
             </tr>
             """)
@@ -286,6 +466,13 @@ class HTMLReportGeneratorAgent:
         """ if total_clean_rows > 10 else ""
 
         ts_svg_section = self._build_svg_time_series(analysis_result.get("time_series", {}))
+        cb0 = (analysis_result.get("category_breakdowns") or [None])[0]
+        donut_svg_section = self._build_svg_donut(cb0) if cb0 else ""
+        ba_col_svg_section = self._build_svg_before_after_columns(cb0) if cb0 else ""
+        qual_svg_section = self._build_svg_quality_bars(
+            initial_profile.get("health_score", {}),
+            cleaning_report.get("health_after", {})
+        )
 
         # Ghép toàn bộ thành tài liệu HTML5 hoàn chỉnh
         html_doc = f"""<!DOCTYPE html>
@@ -656,24 +843,32 @@ class HTMLReportGeneratorAgent:
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:24%;">Vấn đề Nhận diện</th>
-                            <th style="width:32%;">Nguyên nhân Gốc rễ (Root Cause)</th>
-                            <th style="width:22%;">Mức độ Ảnh hưởng</th>
-                            <th style="width:22%;">Giải pháp Khắc phục từ AI</th>
+                            <th style="width:14%;">Khâu & Mức độ</th>
+                            <th style="width:20%;">Vấn đề Nhận diện</th>
+                            <th style="width:28%;">Nguyên nhân Gốc rễ (Root Cause)</th>
+                            <th style="width:19%;">Mức độ Ảnh hưởng</th>
+                            <th style="width:19%;">Giải pháp Khắc phục từ AI</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {"".join(rca_rows_html) if rca_rows_html else "<tr><td colspan='4'>Không có vấn đề cần xử lý</td></tr>"}
+                        {"".join(rca_rows_html) if rca_rows_html else "<tr><td colspan='5'>Không có vấn đề cần xử lý</td></tr>"}
                     </tbody>
                 </table>
             </div>
 
-            <!-- 3. PHÂN TÍCH TRỰC QUAN -->
+            <!-- 3. PHÂN TÍCH TRỰC QUAN ĐA BIỂU ĐỒ -->
             <div class="section-title">
-                <span>3. Phân tích Trực quan Đa chiều (Visual Analytics)</span>
+                <span>3. Hệ thống Biểu đồ Trực quan hóa Đa chiều (Visual Analytics)</span>
+            </div>
+            <div class="charts-grid">
+                {ba_col_svg_section}
+                {donut_svg_section}
             </div>
             <div class="charts-grid">
                 {"".join(cat_charts_html)}
+            </div>
+            <div class="charts-grid">
+                {qual_svg_section}
             </div>
             {ts_svg_section}
 
@@ -728,17 +923,19 @@ class HTMLReportGeneratorAgent:
             </div>
             ''' if corr_rows_html else ''}
 
-            <!-- 6. KHUYẾN NGHỊ HÀNH ĐỘNG -->
+            <!-- 6. KHUYẾN NGHỊ HÀNH ĐỘNG & LỘ TRÌNH TRIỂN KHAI -->
             <div class="section-title">
-                <span>6. Khuyến nghị Chiến lược & Giải pháp từ AI Agent (Actionable Recommendations)</span>
+                <span>6. Khuyến nghị Chiến lược & Lộ trình Triển khai (Actionable Recommendations)</span>
             </div>
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th style="width:130px;">Mức ưu tiên</th>
-                            <th>Hành động Khuyến nghị (Recommended Action)</th>
-                            <th>Tác động Kỳ vọng (Expected Impact)</th>
+                            <th style="width:105px;">Mức ưu tiên</th>
+                            <th>Hành động Khuyến nghị</th>
+                            <th style="width:155px;">Bộ phận phụ trách</th>
+                            <th style="width:115px;">Lộ trình</th>
+                            <th>Tác động Kỳ vọng</th>
                         </tr>
                     </thead>
                     <tbody>

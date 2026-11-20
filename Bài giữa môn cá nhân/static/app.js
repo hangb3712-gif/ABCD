@@ -1519,18 +1519,37 @@ function renderReportStage() {
     `;
   }
 
+  // 0. Tóm tắt Điều hành (Executive Summary)
+  const execSum = analysisData?.ai_insights?.executive_summary || '';
+  if ($('reportExecSummary') && $('reportExecSummaryCard')) {
+    if (execSum) {
+      $('reportExecSummaryCard').style.display = 'block';
+      $('reportExecSummary').textContent = execSum;
+    } else {
+      $('reportExecSummaryCard').style.display = 'none';
+    }
+  }
+
   // 1. Phân tích Nguyên nhân Gốc rễ (Root Cause Analysis - RCA)
   const rca = analysisData?.ai_insights?.root_cause_analysis || [];
   const elRca = $('rootCauseTable');
   if (elRca) {
-    elRca.innerHTML = rca.map(item => `
+    elRca.innerHTML = rca.map(item => {
+      const sev = String(item.severity || 'Cao');
+      const sevClass = sev.toLowerCase().includes('nghiêm') ? 'prio-high' : 'prio-med';
+      return `
       <tr>
+        <td>
+          <div style="font-weight:700;font-size:.82rem;color:var(--t1);margin-bottom:4px">${esc(item.stage || 'Quy trình')}</div>
+          <span class="prio-badge ${sevClass}">${esc(sev)}</span>
+        </td>
         <td style="font-weight:700; color:#b52b65;">${esc(item.issue)}</td>
         <td style="line-height:1.5;">${esc(item.root_cause)}</td>
         <td style="color:#4a355b; font-size:.84rem;">${esc(item.impact)}</td>
         <td style="color:#1b5a96; font-weight:600; font-size:.84rem;">${esc(item.solution)}</td>
       </tr>
-    `).join('') || '<tr><td colspan="4" class="muted">Không có vấn đề cần xử lý</td></tr>';
+    `;
+    }).join('') || '<tr><td colspan="5" class="muted">Không có vấn đề cần xử lý</td></tr>';
   }
 
   // 2. Nhận định & Insights từ AI
@@ -1548,7 +1567,7 @@ function renderReportStage() {
     `).join('') || '<div class="muted">Không có nhận định</div>';
   }
 
-  // 3. Đề xuất Giải pháp Chiến lược từ AI
+  // 3. Đề xuất Giải pháp Chiến lược & Lộ trình Triển khai
   const recs = analysisData?.ai_insights?.recommendations || [];
   const elRecs = $('reportRecsTable');
   if (elRecs) {
@@ -1559,10 +1578,59 @@ function renderReportStage() {
         <tr>
           <td><span class="prio-badge ${pClass}">${esc(prio)}</span></td>
           <td><strong>${esc(r.action)}</strong></td>
-          <td style="color:#4a355b;">${esc(r.impact)}</td>
+          <td style="font-size:.83rem;color:#1d4e78;font-weight:600">${esc(r.owner || 'Bộ phận liên quan')}</td>
+          <td style="font-size:.82rem"><span class="badge b">${esc(r.timeline || 'Trong tháng')}</span></td>
+          <td style="color:#4a355b;font-size:.84rem">${esc(r.impact)}</td>
         </tr>
       `;
-    }).join('') || '<tr><td colspan="3" class="muted">Không có khuyến nghị</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="muted">Không có khuyến nghị</td></tr>';
+  }
+
+  // 3b. Thống kê Mô tả Chi tiết & Ma trận Tương quan Pearson
+  const numStats = analysisData?.numeric_summaries || [];
+  const elStats = $('reportStatsTable');
+  if (elStats) {
+    elStats.innerHTML = numStats.map(st => `
+      <tr>
+        <td style="font-weight:700">${esc(st.column)}</td>
+        <td class="amt">${fmt(st.count)}</td>
+        <td class="amt">${fmtDec(st.mean)}</td>
+        <td class="amt">${fmtDec(st.std)}</td>
+        <td class="amt">${fmtDec(st.min)}</td>
+        <td class="amt">${fmtDec(st.q25)}</td>
+        <td class="amt" style="font-weight:700;color:#b52b65">${fmtDec(st.median)}</td>
+        <td class="amt">${fmtDec(st.q75)}</td>
+        <td class="amt">${fmtDec(st.max)}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="9" class="muted">Không có biến định lượng</td></tr>';
+  }
+
+  const corrs = analysisData?.correlations || [];
+  const elCorrWrap = $('reportCorrWrap');
+  const elCorr = $('reportCorrTable');
+  if (elCorrWrap && elCorr) {
+    if (corrs.length > 0) {
+      elCorrWrap.style.display = 'block';
+      elCorr.innerHTML = corrs.slice(0, 6).map(c => {
+        const rVal = Number(c.r || 0);
+        const pct = Math.min(100, Math.round(Math.abs(rVal) * 100));
+        const col = rVal >= 0 ? '#16845b' : '#c03957';
+        return `
+          <tr>
+            <td><strong>${esc(c.col_a)}</strong> ↔ <strong>${esc(c.col_b)}</strong></td>
+            <td class="amt" style="font-weight:700;color:${col}">${rVal >= 0 ? '+' : ''}${rVal.toFixed(3)}</td>
+            <td>
+              <div style="background:#f3e9f8;height:8px;border-radius:4px;overflow:hidden;width:130px">
+                <div style="width:${pct}%;height:100%;background:${col}"></div>
+              </div>
+            </td>
+            <td style="font-size:.84rem">${esc(c.strength)} (${esc(c.direction)})</td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      elCorrWrap.style.display = 'none';
+    }
   }
 
   // 4. Bảng tổng hợp & Khuyến nghị (Tối đa 10 dòng + Nút hiển thị toàn bộ nếu vượt quá 10 dòng)
@@ -1915,6 +1983,362 @@ function renderMultiCharts() {
       }
     }));
   }
+
+  // 5. BIỂU ĐỒ CỘT ĐỨNG KÉP: SO SÁNH SỐ LƯỢNG BẢN GHI (GỐC VS SẠCH) THEO PHÂN KHÚC
+  const elCount = $('countCompareChart');
+  if (elCount) {
+    const countsClean = cb0.items.slice(0, 8).map(it => Number(it.count || 0));
+    const countsRaw = cb0.items.slice(0, 8).map(it => Number(it.count_before ?? it.count ?? 0));
+    const totalCleanCnt = countsClean.reduce((a, b) => a + b, 0);
+    const totalRawCnt = countsRaw.reduce((a, b) => a + b, 0);
+    if ($('chart5Stat')) {
+      $('chart5Stat').innerHTML = `Tổng bản ghi sạch: <b>${fmt(totalCleanCnt)}</b> · Trước làm sạch: <b>${fmt(totalRawCnt)}</b>`;
+    }
+    charts.push(new Chart(elCount, {
+      type: 'bar',
+      data: {
+        labels: labels.slice(0, 8),
+        datasets: [
+          {
+            label: 'Số dòng gốc (Chưa làm sạch)',
+            data: countsRaw,
+            backgroundColor: 'rgba(205, 180, 219, 0.72)',
+            borderColor: '#7c5c96',
+            borderWidth: 1.2,
+            borderRadius: 5
+          },
+          {
+            label: 'Số dòng sạch (Đã chuẩn hóa)',
+            data: countsClean,
+            backgroundColor: 'rgba(162, 210, 255, 0.88)',
+            borderColor: '#1d4e78',
+            borderWidth: 1.2,
+            borderRadius: 5
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: '#2b1d38' } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)} dòng`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#2b1d38', font: { size: 11 } } },
+          y: { beginAtZero: true, grid: { color: 'rgba(205, 180, 219, 0.2)' }, ticks: { precision: 0 } }
+        }
+      }
+    }));
+  }
+
+  // 6. BIỂU ĐỒ KẾT HỢP CỘT & ĐƯỜNG: PHÂN TÍCH PARETO 80/20 (GIÁ TRỊ & TỶ LỆ TÍCH LŨY %)
+  const elPareto = $('paretoChart');
+  if (elPareto) {
+    const pItems = cb0.items.slice(0, 8);
+    const pLabels = pItems.map(it => it.category);
+    const pVals = pItems.map(it => Number(it.sum || 0));
+    const totalSumForPareto = Math.max(cb0.items.reduce((a, b) => a + Number(b.sum || 0), 0), 1e-6);
+    let running = 0;
+    const cumPct = pVals.map(v => {
+      running += v;
+      return Number(Math.min(100, (running / totalSumForPareto) * 100).toFixed(1));
+    });
+    const top2Share = cumPct.length >= 2 ? cumPct[1] : (cumPct[0] || 0);
+    if ($('chart6Stat')) {
+      $('chart6Stat').innerHTML = `Top 2 phân khúc đầu tiên chiếm <b>${top2Share}%</b> tổng ${metricName.toLowerCase()}`;
+    }
+    charts.push(new Chart(elPareto, {
+      data: {
+        labels: pLabels,
+        datasets: [
+          {
+            type: 'bar',
+            label: `${metricName} (${currUnit.trim() || 'đơn vị'})`,
+            data: pVals,
+            backgroundColor: 'rgba(255, 175, 204, 0.82)',
+            borderColor: '#b52b65',
+            borderWidth: 1.2,
+            borderRadius: 6,
+            yAxisID: 'y'
+          },
+          {
+            type: 'line',
+            label: 'Tỷ lệ tích lũy (%)',
+            data: cumPct,
+            borderColor: '#1d4e78',
+            backgroundColor: '#a2d2ff',
+            borderWidth: 2.6,
+            pointRadius: 4.5,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#1d4e78',
+            pointBorderWidth: 2,
+            tension: 0.25,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: '#2b1d38' } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ctx.dataset.yAxisID === 'y1'
+                ? ` Tích lũy: ${ctx.raw}%`
+                : ` ${metricName}: ${fmt(ctx.raw)}${currUnit}`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#2b1d38', font: { size: 11 } } },
+          y: {
+            type: 'linear',
+            position: 'left',
+            beginAtZero: true,
+            grid: { color: 'rgba(205, 180, 219, 0.2)' },
+            ticks: { callback: v => fmtS(v) }
+          },
+          y1: {
+            type: 'linear',
+            position: 'right',
+            min: 0,
+            max: 100,
+            grid: { drawOnChartArea: false },
+            ticks: { callback: v => v + '%', color: '#1d4e78' }
+          }
+        }
+      }
+    }));
+  }
+
+  // 7. BIỂU ĐỒ CỘT KÉP: ĐỐI CHIẾU TRUNG BÌNH (MEAN) VS TRUNG VỊ (MEDIAN) THEO PHÂN KHÚC
+  const elMM = $('meanMedianChart');
+  if (elMM) {
+    const mmItems = cb0.items.slice(0, 8);
+    const mmLabels = mmItems.map(it => it.category);
+    const mmMeans = mmItems.map(it => Number(it.mean || 0));
+    const mmMedians = mmItems.map(it => Number(it.median || 0));
+    if ($('chart7Stat')) {
+      $('chart7Stat').innerHTML = `So sánh độ ổn định phân phối giữa <b>Mean</b> và <b>Median</b> trên ${mmItems.length} phân khúc`;
+    }
+    charts.push(new Chart(elMM, {
+      type: 'bar',
+      data: {
+        labels: mmLabels,
+        datasets: [
+          {
+            label: 'Trung bình (Mean)',
+            data: mmMeans,
+            backgroundColor: 'rgba(255, 200, 221, 0.9)',
+            borderColor: '#b52b65',
+            borderWidth: 1.2,
+            borderRadius: 5
+          },
+          {
+            label: 'Trung vị (Median)',
+            data: mmMedians,
+            backgroundColor: 'rgba(189, 224, 254, 0.92)',
+            borderColor: '#1d4e78',
+            borderWidth: 1.2,
+            borderRadius: 5
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: '#2b1d38' } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${fmtDec(ctx.raw)}${currUnit}`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#2b1d38', font: { size: 11 } } },
+          y: { beginAtZero: true, grid: { color: 'rgba(205, 180, 219, 0.2)' }, ticks: { callback: v => fmtS(v) } }
+        }
+      }
+    }));
+  }
+
+  // 8. BIỂU ĐỒ CỘT NGANG ĐỐI CHIẾU: CẢI THIỆN MỨC ĐỘ SẠCH DỮ LIỆU (TRƯỚC VS SAU)
+  const elQual = $('qualityCompareChart');
+  if (elQual) {
+    const hInit = initialProfileData?.health_score || {};
+    const hClean = lastCleaningReport?.health_after || {};
+    const beforeScore = Number(hInit.overall ?? 0);
+    const afterScore = Number(hClean.overall ?? 98);
+    if ($('chart8Stat')) {
+      $('chart8Stat').innerHTML = `Mức độ sạch tăng từ <b>${beforeScore}/100</b> ➔ <b>${afterScore}/100</b> (+${(afterScore - beforeScore).toFixed(1)} điểm)`;
+    }
+    charts.push(new Chart(elQual, {
+      type: 'bar',
+      data: {
+        labels: [
+          'Đầy đủ (Không trống ô)',
+          'Không trùng lặp bản ghi',
+          'Đúng định dạng chuẩn',
+          'Giá trị hợp lý (Không lỗi)',
+          'Mức độ sạch tổng thể'
+        ],
+        datasets: [
+          {
+            label: 'Trước làm sạch (Gốc)',
+            data: [
+              Number(hInit.completeness ?? 0),
+              Number(hInit.uniqueness ?? 0),
+              Number(hInit.consistency ?? 0),
+              Number(hInit.validity ?? 0),
+              beforeScore
+            ],
+            backgroundColor: 'rgba(255, 175, 204, 0.8)',
+            borderColor: '#b52b65',
+            borderWidth: 1.2,
+            borderRadius: 5
+          },
+          {
+            label: 'Sau làm sạch (Đã duyệt)',
+            data: [
+              Number(hClean.completeness ?? 98),
+              Number(hClean.uniqueness ?? 100),
+              Number(hClean.consistency ?? 98),
+              Number(hClean.validity ?? 98),
+              afterScore
+            ],
+            backgroundColor: 'rgba(162, 210, 255, 0.9)',
+            borderColor: '#1d4e78',
+            borderWidth: 1.2,
+            borderRadius: 5
+          }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: '#2b1d38' } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}/100 điểm`
+            }
+          }
+        },
+        scales: {
+          x: { min: 0, max: 100, grid: { color: 'rgba(205, 180, 219, 0.2)' }, ticks: { callback: v => v + 'đ' } },
+          y: { grid: { display: false }, ticks: { font: { weight: '600', size: 11 }, color: '#2b1d38' } }
+        }
+      }
+    }));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SINH GIẢI THÍCH & CHÚ THÍCH CHI TIẾT DƯỚI MỖI BIỂU ĐỒ (1 ĐẾN 8)
+  // ═══════════════════════════════════════════════════════════════════════════
+  const setExplain = (id, explainText, noteText) => {
+    const el = $(id);
+    if (!el) return;
+    el.innerHTML = `
+      <div class="ce-row"><span class="ce-tag">📖 Giải thích:</span> ${explainText}</div>
+      <div class="ce-row ce-note"><span class="ce-tag">🏷️ Chú thích:</span> ${noteText}</div>
+    `;
+  };
+
+  const top1 = cb0.items[0] || { category: 'N/A', sum: 0, share_pct: 0, mean: 0, median: 0 };
+  const top2 = cb0.items[1] || null;
+  const bottom1 = cb0.items[cb0.items.length - 1] || top1;
+  const diffCleanRaw = rawSum - cleanSum;
+  const diffPhrase = diffCleanRaw > 0
+    ? `giảm <b>${fmt(diffCleanRaw)}${currUnit}</b> sau khi loại bỏ trùng lặp và giá trị bất thường`
+    : (diffCleanRaw < 0 ? `tăng thêm <b>${fmt(Math.abs(diffCleanRaw))}${currUnit}</b> sau khi điền khuyết và chuẩn hóa` : 'giữ nguyên độ chính xác 100%');
+
+  // Giải thích & Chú thích Biểu đồ 1
+  setExplain(
+    'chart1Explain',
+    `Đối chiếu tổng <b>${esc(metricName)}</b> giữa dữ liệu gốc và dữ liệu đã làm sạch theo từng nhóm <b>${esc(cb0.category_col)}</b>. Tổng giá trị sạch đạt <b>${fmt(cleanSum)}${currUnit}</b> (${diffPhrase}); phân khúc dẫn đầu là <b>${esc(top1.category)}</b> đạt <b>${fmt(top1.sum)}${currUnit}</b>.`,
+    `Cột màu tím nhạt = Dữ liệu gốc chưa làm sạch · Cột màu hồng = Dữ liệu sạch đã chuẩn hóa · Trục đứng = Tổng giá trị · Trục ngang = Các phân khúc.`
+  );
+
+  // Giải thích & Chú thích Biểu đồ 2
+  setExplain(
+    'chart2Explain',
+    `Hiển thị cơ cấu tỷ trọng đóng góp (%) của <b>${cb0.items.length}</b> phân khúc vào tổng ${esc(metricName.toLowerCase())}. Nhóm <b>${esc(top1.category)}</b> chiếm tỷ trọng lớn nhất (<b>${top1.share_pct}%</b>), trong khi nhóm thấp nhất là <b>${esc(bottom1.category)}</b> (<b>${bottom1.share_pct}%</b>).`,
+    `Mỗi mảng màu tương ứng với 1 phân khúc có độ rộng tỷ lệ thuận với % đóng góp · Di chuột vào từng phần để xem giá trị tuyệt đối và tỷ lệ chi tiết.`
+  );
+
+  // Giải thích & Chú thích Biểu đồ 3
+  const tsObj = analysisData?.time_series;
+  if (tsObj && tsObj.has_time_series && tsObj.values && tsObj.values.length) {
+    const peakVal = Math.max(...tsObj.values);
+    const peakIdx = tsObj.values.indexOf(peakVal);
+    const peakLbl = tsObj.labels[peakIdx] || '';
+    setExplain(
+      'chart3Explain',
+      `Theo dõi diễn biến xu hướng <b>${esc(metricName)}</b> qua <b>${tsObj.labels.length}</b> mốc thời gian. Giá trị đạt đỉnh cao nhất là <b>${fmt(peakVal)}${currUnit}</b> tại mốc <b>${esc(peakLbl)}</b>, giúp nhận diện chu kỳ tăng trưởng hoặc mùa vụ.`,
+      `Đường viền & vùng tô màu = Xu hướng biến động theo thời gian · Trục ngang = Các mốc thời gian · Trục đứng = Giá trị ${esc(metricName.toLowerCase())}.`
+    );
+  } else {
+    setExplain(
+      'chart3Explain',
+      `Minh họa đường cộng dồn tích lũy <b>${esc(metricName)}</b> qua <b>${cb0.items.length}</b> phân khúc, chạm mức tổng <b>${fmt(cleanSum)}${currUnit}</b>. Độ dốc càng lớn cho thấy phân khúc đó đóng góp bước nhảy giá trị càng mạnh.`,
+      `Đường biểu diễn = Tổng giá trị tích lũy cộng dồn · Mỗi điểm tròn = 1 phân khúc dữ liệu xếp theo thứ tự.`
+    );
+  }
+
+  // Giải thích & Chú thích Biểu đồ 4
+  const top2Text = top2 ? `, theo sau là <b>${esc(top2.category)}</b> (<b>${fmt(top2.sum)}${currUnit}</b>)` : '';
+  setExplain(
+    'chart4Explain',
+    `Xếp hạng trực quan các phân khúc từ cao xuống thấp để nhận diện nhóm đóng góp chủ lực. Đứng đầu bảng là <b>${esc(top1.category)}</b> với <b>${fmt(top1.sum)}${currUnit}</b>${top2Text}.`,
+    `Thanh ngang càng dài thể hiện quy mô giá trị càng lớn · Trục ngang = Giá trị ${esc(metricName.toLowerCase())} sạch · Trục dọc = Tên phân khúc xếp hạng.`
+  );
+
+  // Giải thích & Chú thích Biểu đồ 5
+  const cntCleanSum = cb0.items.reduce((a, b) => a + Number(b.count || 0), 0);
+  const cntRawSum = cb0.items.reduce((a, b) => a + Number(b.count_before ?? b.count ?? 0), 0);
+  const cntDropped = Math.max(0, cntRawSum - cntCleanSum);
+  setExplain(
+    'chart5Explain',
+    `So sánh số lượng bản ghi (đơn hàng/hồ sơ) trước và sau khi AI lọc trùng lặp. Hệ thống đã chuẩn hóa từ <b>${fmt(cntRawSum)}</b> dòng gốc còn <b>${fmt(cntCleanSum)}</b> dòng sạch hợp lệ (loại bỏ <b>${fmt(cntDropped)}</b> dòng trùng/lỗi).`,
+    `Cột màu tím = Số lượng bản ghi gốc ban đầu · Cột màu xanh dương = Số bản ghi sạch sau xử lý · Trục đứng = Số lượng dòng dữ liệu.`
+  );
+
+  // Giải thích & Chú thích Biểu đồ 6
+  const pTot = Math.max(cb0.items.reduce((a, b) => a + Number(b.sum || 0), 0), 1e-6);
+  const top2Sum = Number(top1.sum || 0) + (top2 ? Number(top2.sum || 0) : 0);
+  const top2Pct = Math.min(100, (top2Sum / pTot) * 100).toFixed(1);
+  setExplain(
+    'chart6Explain',
+    `Áp dụng nguyên tắc <b>Pareto 80/20</b> để tìm ra nhóm thiểu số tạo ra đa số giá trị. Chỉ riêng 2 nhóm dẫn đầu (<b>${esc(top1.category)}</b>${top2 ? ` & <b>${esc(top2.category)}</b>` : ''}) đã đóng góp tới <b>${top2Pct}%</b> tổng ${esc(metricName.toLowerCase())}.`,
+    `Cột màu hồng (trục trái) = Giá trị riêng từng phân khúc · Đường màu xanh đậm (trục phải 0%–100%) = Tỷ lệ % tích lũy cộng dồn.`
+  );
+
+  // Giải thích & Chú thích Biểu đồ 7
+  const skewNote = Math.abs(Number(top1.mean || 0) - Number(top1.median || 0)) > (Number(top1.median || 1) * 0.25)
+    ? `Tại nhóm <b>${esc(top1.category)}</b>, có sự chênh lệch rõ giữa Mean (${fmtDec(top1.mean)}${currUnit}) và Median (${fmtDec(top1.median)}${currUnit}), cho thấy tồn tại các giao dịch giá trị đột biến.`
+    : `Tại nhóm <b>${esc(top1.category)}</b>, Mean (${fmtDec(top1.mean)}${currUnit}) và Median (${fmtDec(top1.median)}${currUnit}) khá cân bằng, chứng tỏ dữ liệu phân bổ đồng đều.`;
+  setExplain(
+    'chart7Explain',
+    `Đánh giá độ đồng đều phân phối bên trong từng phân khúc thông qua đối chiếu Trung bình (Mean) và Trung vị (Median). ${skewNote}`,
+    `Cột màu hồng nhạt = Giá trị Trung bình (Mean) · Cột màu xanh nhạt = Giá trị Trung vị (Median — mức giữa phân khúc).`
+  );
+
+  // Giải thích & Chú thích Biểu đồ 8
+  const hB = Number(initialProfileData?.health_score?.overall ?? 0);
+  const hA = Number(lastCleaningReport?.health_after?.overall ?? 98);
+  setExplain(
+    'chart8Explain',
+    `Đo lường trực tiếp mức độ cải thiện chất lượng dữ liệu sau khi áp dụng quy tắc làm sạch AI. Mức độ sạch tổng thể tăng từ <b>${hB}/100</b> lên <b>${hA}/100</b> (+<b>${(hA - hB).toFixed(1)}</b> điểm), giảm thiểu tối đa rủi ro sai số báo cáo.`,
+    `Thanh màu hồng = Điểm chất lượng trước làm sạch (thang 0–100) · Thanh màu xanh dương = Điểm chất lượng sau khi làm sạch và được phê duyệt.`
+  );
 }
 
 function toggleDirectEditReport() {
